@@ -4,11 +4,17 @@ import * as textPluginModule from "@textlint/textlint-plugin-text";
 import * as markdownPluginModule from "@textlint/textlint-plugin-markdown";
 import presetEn from "@aitytech/textlint-rule-preset-ai-writing-en";
 import presetVi from "@aitytech/textlint-rule-preset-ai-writing-vi";
-// Uses our own aitytech fork (converted from a pure mirror 2026-08-29), not the upstream
-// @textlint-ja npm package — this is the one that will carry AITYTECH's own rule additions
-// (no-em-dash-overuse, no-ai-artifact-leakage, tech-writing-guideline's new categories) once
-// they're ported to Japanese, same as EN/VI.
-import presetJa from "@aitytech/textlint-rule-preset-ai-writing-ja";
+// The JA preset (our aitytech fork, converted from a pure mirror 2026-08-29) is loaded lazily
+// via dynamic import in presetFor(), NOT statically here like EN/VI. Reason: it pulls in
+// kuromoji for tokenization, which pulls in zlibjs (an unmaintained pre-ESM UMD package, last
+// published ~2015) to decompress its dictionary in browser-like environments. zlibjs's own
+// "is my global already defined" check breaks under bundler rewriting --
+// "Cannot use 'in' operator to search for 'Zlib' in undefined" -- confirmed by direct repro,
+// not assumed. A static top-level import made that crash happen at MODULE LOAD, which killed
+// EN/VI too even when nobody asked for Japanese. Lazy-loading contains the blast radius to
+// only actual JA lint calls, and lets callers show "JA isn't available here yet" instead of a
+// blank crashed page. This is a known real gap, not a finished feature -- see this package's
+// README before shipping JA support in a bundled (web/React Native) environment.
 
 // Both plugin packages end up DOUBLE-wrapped under `.default.default` when imported as ESM here
 // (each layer of CJS<->ESM interop -- the package's own build, then Node's loader -- adds one
@@ -44,6 +50,13 @@ export type LintFinding = {
     column: number;
     /** Character offset into the input text, for editor/UI highlighting. */
     index: number;
+    /**
+     * [startIndex, endIndex) into the input text -- straight from textlint's own
+     * TextlintMessage.range, not derived. Editors should underline/highlight this span
+     * rather than guessing a length from `index` alone (most findings cover more than
+     * one character: a whole phrase like "as an AI language model", not a single point).
+     */
+    range: readonly [number, number];
     severity: LintSeverity;
 };
 
@@ -63,12 +76,43 @@ function severityFromNumber(n: number): LintSeverity {
     return "info";
 }
 
-function presetFor(language: Language) {
-    const preset = language === "en" ? presetEn : language === "vi" ? presetVi : presetJa;
+/** Populated on first successful "ja" lint call so repeat calls skip the dynamic import. */
+let cachedJaPreset: typeof presetEn | undefined;
+
+async function presetFor(language: Language) {
+    if (language === "en") return normalizePreset(presetEn);
+    if (language === "vi") return normalizePreset(presetVi);
+
+    if (!cachedJaPreset) {
+        let mod: unknown;
+        try {
+            mod = await import("@aitytech/textlint-rule-preset-ai-writing-ja");
+        } catch (cause) {
+            throw new JapaneseUnavailableError(cause);
+        }
+        cachedJaPreset = normalizePreset(mod);
+    }
+    return cachedJaPreset;
+}
+
+function normalizePreset(preset: unknown): typeof presetEn {
     // All three presets export { rules, rulesConfig } — normalize the (default-export vs
     // named-export) shape difference that can occur across bundlers/module systems.
-    const normalized = (preset as { default?: typeof preset }).default ?? preset;
-    return normalized;
+    return ((preset as { default?: typeof presetEn }).default ?? preset) as typeof presetEn;
+}
+
+/**
+ * Thrown when Japanese linting can't run in the current environment (see the note above the
+ * dynamic import in presetFor). Callers should catch this specifically and show a "JA isn't
+ * available here yet" message rather than letting it surface as a generic crash.
+ */
+export class JapaneseUnavailableError extends Error {
+    constructor(public readonly cause: unknown) {
+        super(
+            "Japanese linting could not load in this environment (known kuromoji/zlibjs bundling gap)."
+        );
+        this.name = "JapaneseUnavailableError";
+    }
 }
 
 /**
@@ -80,7 +124,7 @@ export async function lintText(
     options: { language: Language; ext?: ".txt" | ".md" } = { language: "en" }
 ): Promise<LintResult> {
     const { language, ext = ".md" } = options;
-    const preset = presetFor(language);
+    const preset = await presetFor(language);
     // The EN/VI presets' rulesConfig values are correct at runtime (each is `true` or a literal
     // `{ severity: "error" | "info" }`), but TS widens `severity` to `string` when read through a
     // dynamic key lookup like this. Cast at this single boundary rather than loosening the
@@ -105,6 +149,7 @@ export async function lintText(
         line: m.line,
         column: m.column,
         index: m.index,
+        range: m.range,
         severity: severityFromNumber(m.severity)
     }));
 

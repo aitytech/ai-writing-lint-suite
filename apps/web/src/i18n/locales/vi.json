@@ -1,0 +1,28 @@
+{
+  "lang": {
+    "auto": "Tự động",
+    "en": "EN",
+    "vi": "VI",
+    "ja": "JA"
+  },
+  "aria": {
+    "draft": "Bản nháp",
+    "findings": "Kết quả",
+    "language": "Ngôn ngữ"
+  },
+  "ledger": {
+    "heading": "Soát lỗi",
+    "checking": "đang kiểm tra…",
+    "findingsCount_other": "{{count}} phát hiện",
+    "clean": "Không có gì bị gắn cờ. Văn bản sạch."
+  },
+  "severity": {
+    "error": "lỗi",
+    "warning": "cảnh báo",
+    "info": "gợi ý"
+  },
+  "jaGapNote": "Kiểm tra tiếng Nhật chưa tải được trên bản trình duyệt này (bộ tải từ điển kuromoji phụ thuộc gói không còn bảo trì). Đây là hạn chế đã biết, không phải bị bỏ qua âm thầm — EN/VI không bị ảnh hưởng.",
+  "footer": {
+    "privacy": "Chạy hoàn toàn trong tab này — bản nháp không rời khỏi trình duyệt của bạn."
+  }
+}
