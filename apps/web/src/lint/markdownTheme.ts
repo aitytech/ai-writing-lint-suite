@@ -48,6 +48,38 @@ export const markdownLiveStyle = [
         },
         ".cm-lint-mark--error": { color: "var(--mark-red)" },
         ".cm-lint-mark--warning": { color: "var(--mark-amber)" },
-        ".cm-lint-mark--info": { color: "var(--mark-teal)" }
+        ".cm-lint-mark--info": { color: "var(--mark-teal)" },
+        // CodeMirror renders hover tooltips as a portal near <body>, not inside .cm-editor,
+        // but attaches this same generated theme class to them -- so plain descendant
+        // selectors here still reach the tooltip DOM without a separate stylesheet.
+        ".cm-tooltip": {
+            border: "none",
+            backgroundColor: "transparent"
+        },
+        ".cm-lint-tooltip": {
+            maxWidth: "280px",
+            padding: "10px 12px",
+            borderRadius: "8px",
+            border: "1px solid var(--border)",
+            background: "var(--surface)",
+            boxShadow: "var(--shadow)",
+            fontFamily: "var(--font-ui)"
+        },
+        ".cm-lint-tooltip-tag": {
+            display: "block",
+            fontFamily: "var(--font-mono)",
+            fontSize: "10.5px",
+            color: "var(--text-muted)",
+            marginBottom: "4px"
+        },
+        ".cm-lint-tooltip p": {
+            margin: 0,
+            fontSize: "12.5px",
+            lineHeight: "1.5",
+            color: "var(--text)"
+        },
+        ".cm-lint-tooltip--error .cm-lint-tooltip-tag": { color: "var(--mark-red)" },
+        ".cm-lint-tooltip--warning .cm-lint-tooltip-tag": { color: "var(--mark-amber)" },
+        ".cm-lint-tooltip--info .cm-lint-tooltip-tag": { color: "var(--mark-teal)" }
     })
 ];

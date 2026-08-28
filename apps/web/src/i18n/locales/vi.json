@@ -15,7 +15,9 @@
     "heading": "Soát lỗi",
     "checking": "đang kiểm tra…",
     "findingsCount_other": "{{count}} phát hiện",
-    "clean": "Không có gì bị gắn cờ. Văn bản sạch."
+    "clean": "Không có gì bị gắn cờ. Văn bản sạch.",
+    "filterLabel": "Lọc theo mức độ",
+    "showMore_other": "Xem thêm {{count}}"
   },
   "gauge": {
     "caption": "độ rõ",

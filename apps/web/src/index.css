@@ -301,10 +301,24 @@ body {
     text-align: center;
     padding: 10px 4px;
     border-right: 1px solid var(--border);
+    border-top: none;
+    border-bottom: none;
+    border-left: none;
+    background: none;
+    font: inherit;
+    cursor: pointer;
 }
 
 .count:last-child {
     border-right: none;
+}
+
+.count:hover {
+    background: var(--surface-2);
+}
+
+.count--active {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .count .n {
@@ -332,6 +346,36 @@ body {
 
 .count--info .n {
     color: var(--mark-teal);
+}
+
+.finding-jump {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    font: inherit;
+    cursor: pointer;
+    padding: 0;
+}
+
+.show-more {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    background: none;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.show-more:hover {
+    border-color: var(--accent-soft);
+    color: var(--text);
 }
 
 /* Same idea as .counts: one bordered list, findings separated by hairlines, instead of a

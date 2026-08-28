@@ -1,6 +1,6 @@
 import { StateEffect, StateField } from "@codemirror/state";
-import { Decoration, EditorView } from "@codemirror/view";
-import type { DecorationSet } from "@codemirror/view";
+import { Decoration, EditorView, hoverTooltip } from "@codemirror/view";
+import type { DecorationSet, Tooltip } from "@codemirror/view";
 import type { LintFinding } from "@aitytech/ai-writing-lint-core";
 
 /**
@@ -30,7 +30,10 @@ function buildDecorations(findings: LintFinding[], docLength: number): Decoratio
         .map(({ f, from, to }) =>
             Decoration.mark({
                 class: severityClass(f.severity),
-                attributes: { title: f.message, "data-rule-id": f.ruleId }
+                // title is a plain-text accessibility/keyboard fallback; the real hover
+                // experience is lintHoverTooltip() below, which reads ruleId/message/severity
+                // back off these same attributes so the two can never drift apart.
+                attributes: { title: f.message, "data-rule-id": f.ruleId, "data-severity": f.severity }
             }).range(from, to)
         );
     return Decoration.set(marks, true);
@@ -51,3 +54,54 @@ export const lintFindingsField = StateField.define<DecorationSet>({
     },
     provide: (field) => EditorView.decorations.from(field)
 });
+
+type FindingAtPos = { from: number; to: number; ruleId: string; message: string; severity: LintFinding["severity"] };
+
+/** Reads ruleId/message/severity for whichever mark decoration covers `pos`, if any. */
+function findingAt(decorations: DecorationSet, pos: number): FindingAtPos | null {
+    let hit: FindingAtPos | null = null;
+    decorations.between(pos, pos, (from, to, deco) => {
+        const attrs = deco.spec.attributes as Record<string, string> | undefined;
+        if (attrs?.["data-rule-id"]) {
+            hit = {
+                from,
+                to,
+                ruleId: attrs["data-rule-id"],
+                message: attrs.title ?? "",
+                severity: (attrs["data-severity"] as LintFinding["severity"]) ?? "info"
+            };
+            return false;
+        }
+        return undefined;
+    });
+    return hit;
+}
+
+/**
+ * Shows the specific finding under the pointer instead of making the reader cross-reference
+ * a possibly-long list in the ledger sidebar -- point at the flagged phrase, read why it was
+ * flagged right there. Built on CodeMirror's own hoverTooltip (handles positioning/collision
+ * detection) rather than a hand-rolled popover, so it behaves correctly near viewport edges.
+ */
+export function lintHoverTooltip() {
+    return hoverTooltip((view, pos): Tooltip | null => {
+        const hit = findingAt(view.state.field(lintFindingsField), pos);
+        if (!hit) return null;
+        return {
+            pos: hit.from,
+            end: hit.to,
+            above: true,
+            create() {
+                const dom = document.createElement("div");
+                dom.className = `cm-lint-tooltip cm-lint-tooltip--${hit.severity}`;
+                const tag = document.createElement("span");
+                tag.className = "cm-lint-tooltip-tag";
+                tag.textContent = hit.ruleId;
+                const msg = document.createElement("p");
+                msg.textContent = hit.message;
+                dom.append(tag, msg);
+                return { dom };
+            }
+        };
+    });
+}

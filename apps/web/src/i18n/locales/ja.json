@@ -15,7 +15,9 @@
     "heading": "読み取り",
     "checking": "確認中…",
     "findingsCount_other": "{{count}} 件の指摘",
-    "clean": "指摘なし。問題ありません。"
+    "clean": "指摘なし。問題ありません。",
+    "filterLabel": "重要度で絞り込み",
+    "showMore_other": "他 {{count}} 件を表示"
   },
   "gauge": {
     "caption": "明瞭度",

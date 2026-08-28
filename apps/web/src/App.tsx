@@ -2,15 +2,20 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { EditorView, keymap } from "@codemirror/view";
-import { EditorState } from "@codemirror/state";
+import { EditorSelection, EditorState } from "@codemirror/state";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { markdown } from "@codemirror/lang-markdown";
 import { lintText, detectLanguage, JapaneseUnavailableError } from "@aitytech/ai-writing-lint-core";
-import type { Language, LintFinding, LintResult } from "@aitytech/ai-writing-lint-core";
-import { lintFindingsField, setFindings } from "./lint/decorations";
+import type { Language, LintFinding, LintResult, LintSeverity } from "@aitytech/ai-writing-lint-core";
+import { lintFindingsField, lintHoverTooltip, setFindings } from "./lint/decorations";
 import { markdownLiveStyle } from "./lint/markdownTheme";
 
 const LANGUAGE_MODES: Array<"auto" | Language> = ["auto", "en", "vi", "ja"];
+const SEVERITIES: LintSeverity[] = ["error", "warning", "info"];
+/** How many findings render before the list is truncated behind a "show more" button --
+ * a document with thousands of tells would otherwise dump thousands of DOM nodes into the
+ * sidebar at once. */
+const FINDINGS_PAGE_SIZE = 30;
 
 type ThemePref = "system" | "light" | "dark";
 const THEME_STORAGE_KEY = "tell-tale-theme";
@@ -54,6 +59,21 @@ export function App() {
     const [activeFinding, setActiveFinding] = useState<LintFinding | null>(null);
     const [jaUnavailable, setJaUnavailable] = useState(false);
     const [themePref, setThemePref] = useState<ThemePref>(readStoredTheme);
+    const [severityFilter, setSeverityFilter] = useState<LintSeverity | null>(null);
+    const [visibleCount, setVisibleCount] = useState(FINDINGS_PAGE_SIZE);
+
+    function toggleSeverityFilter(severity: LintSeverity) {
+        setSeverityFilter((prev) => (prev === severity ? null : severity));
+        setVisibleCount(FINDINGS_PAGE_SIZE);
+    }
+
+    function jumpToFinding(f: LintFinding) {
+        const view = viewRef.current;
+        if (!view) return;
+        const pos = Math.max(0, Math.min(f.range[0], view.state.doc.length));
+        view.dispatch({ selection: EditorSelection.cursor(pos), scrollIntoView: true });
+        view.focus();
+    }
 
     useEffect(() => {
         if (themePref === "system") {
@@ -119,6 +139,7 @@ export function App() {
                 markdown(),
                 EditorView.lineWrapping,
                 lintFindingsField,
+                lintHoverTooltip(),
                 markdownLiveStyle,
                 EditorView.updateListener.of((update) => {
                     if (update.docChanged) {
@@ -153,6 +174,10 @@ export function App() {
 
     const counts = result?.counts ?? { error: 0, warning: 0, info: 0 };
     const total = counts.error + counts.warning + counts.info;
+    const allFindings = result?.findings ?? [];
+    const visibleFindings = severityFilter ? allFindings.filter((f) => f.severity === severityFilter) : allFindings;
+    const shownFindings = visibleFindings.slice(0, visibleCount);
+    const remaining = visibleFindings.length - shownFindings.length;
     const score = clarityScore(counts);
     const gaugeColor = score >= 85 ? "var(--mark-teal)" : score >= 60 ? "var(--mark-amber)" : "var(--mark-red)";
     const gaugeStatusKey = score >= 85 ? "gauge.cleanStatus" : score >= 60 ? "gauge.minorStatus" : "gauge.needsStatus";
@@ -224,37 +249,49 @@ export function App() {
 
                         {jaUnavailable && <p className="ja-gap-note">{t("jaGapNote")}</p>}
 
-                        <div className="counts">
-                            <div className="count count--error">
-                                <span className="n">{counts.error}</span>
-                                <span className="label">{t("severity.error")}</span>
-                            </div>
-                            <div className="count count--warning">
-                                <span className="n">{counts.warning}</span>
-                                <span className="label">{t("severity.warning")}</span>
-                            </div>
-                            <div className="count count--info">
-                                <span className="n">{counts.info}</span>
-                                <span className="label">{t("severity.info")}</span>
-                            </div>
+                        <div className="counts" role="group" aria-label={t("ledger.filterLabel")}>
+                            {SEVERITIES.map((sev) => (
+                                <button
+                                    key={sev}
+                                    type="button"
+                                    className={`count count--${sev} ${severityFilter === sev ? "count--active" : ""}`}
+                                    aria-pressed={severityFilter === sev}
+                                    onClick={() => toggleSeverityFilter(sev)}
+                                >
+                                    <span className="n">{counts[sev]}</span>
+                                    <span className="label">{t(`severity.${sev}`)}</span>
+                                </button>
+                            ))}
                         </div>
 
                         <ul className="findings-list">
-                            {result?.findings.map((f, i) => (
+                            {shownFindings.map((f, i) => (
                                 <li
                                     key={`${f.ruleId}-${f.range[0]}-${i}`}
                                     className={`finding finding--${f.severity} ${activeFinding === f ? "active" : ""}`}
                                     onMouseEnter={() => setActiveFinding(f)}
                                     onMouseLeave={() => setActiveFinding(null)}
                                 >
-                                    <span className="rule-tag">{f.ruleId}</span>
-                                    <p>{f.message}</p>
+                                    <button type="button" className="finding-jump" onClick={() => jumpToFinding(f)}>
+                                        <span className="rule-tag">{f.ruleId}</span>
+                                        <p>{f.message}</p>
+                                    </button>
                                 </li>
                             ))}
-                            {result && result.findings.length === 0 && !isLinting && (
+                            {result && visibleFindings.length === 0 && !isLinting && (
                                 <li className="finding finding--clean">{t("ledger.clean")}</li>
                             )}
                         </ul>
+
+                        {remaining > 0 && (
+                            <button
+                                type="button"
+                                className="show-more"
+                                onClick={() => setVisibleCount((n) => n + FINDINGS_PAGE_SIZE)}
+                            >
+                                {t("ledger.showMore", { count: remaining })}
+                            </button>
+                        )}
                     </aside>
                 </main>
             </div>
