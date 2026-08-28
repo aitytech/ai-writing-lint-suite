@@ -166,12 +166,14 @@ body {
    and ledger are ONE surface split by a single internal divider, not two boxes each with
    their own border/shadow/corner-radius sitting side by side. Both zones read off the same
    --surface/--surface-2/--text/--border tokens, so light/dark applies to the whole thing at
-   once instead of the ledger staying permanently dark regardless of the toggle. */
+   once instead of the ledger staying permanently dark regardless of the toggle.
+   No outer border here -- the drop shadow alone separates the card from --bg, and the
+   manuscript/ledger already carry their own internal padding, so a border on top of both
+   would be a third redundant line doing the same job. */
 .workbench {
     max-width: 1600px;
     margin: 0 auto;
     background: var(--surface);
-    border: 1px solid var(--border);
     border-radius: 14px;
     box-shadow: var(--shadow);
     overflow: hidden;
