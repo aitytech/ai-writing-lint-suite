@@ -191,7 +191,7 @@ export function App() {
             </header>
 
             <div className="stage">
-                <main className="layout">
+                <main className="workbench">
                     <section className="manuscript" aria-label={t("aria.draft")}>
                         <div className="manuscript-inner">
                             <div ref={containerRef} className="cm-host" />

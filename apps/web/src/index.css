@@ -15,11 +15,6 @@
     --text-muted: #5c5646;
     --border: #d8cfb2;
     --shadow: 0 1px 2px rgba(22, 27, 38, 0.04), 0 16px 32px -20px rgba(22, 27, 38, 0.18);
-    --ledger-bg: var(--ink-900);
-    --ledger-surface: #1f2536;
-    --ledger-text: var(--paper-50);
-    --ledger-text-muted: #9aa0b4;
-    --ledger-border: #343c53;
 
     --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
     --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
@@ -35,9 +30,6 @@
         --text-muted: #a39d89;
         --border: #2c3348;
         --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 24px 48px -24px rgba(0, 0, 0, 0.6);
-        --ledger-bg: #05060a;
-        --ledger-surface: #10131c;
-        --ledger-border: #22283a;
     }
 }
 
@@ -49,9 +41,6 @@
     --text-muted: #a39d89;
     --border: #2c3348;
     --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 24px 48px -24px rgba(0, 0, 0, 0.6);
-    --ledger-bg: #05060a;
-    --ledger-surface: #10131c;
-    --ledger-border: #22283a;
 }
 
 * {
@@ -173,27 +162,32 @@ body {
     padding: 32px;
 }
 
-.layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 360px;
-    gap: 32px;
+/* One continuous card ("workbench") instead of two separate floating panels -- manuscript
+   and ledger are ONE surface split by a single internal divider, not two boxes each with
+   their own border/shadow/corner-radius sitting side by side. Both zones read off the same
+   --surface/--surface-2/--text/--border tokens, so light/dark applies to the whole thing at
+   once instead of the ledger staying permanently dark regardless of the toggle. */
+.workbench {
     max-width: 1600px;
     margin: 0 auto;
-    align-items: start;
-}
-
-.manuscript {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px;
     box-shadow: var(--shadow);
-    padding: 8px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    align-items: stretch;
+}
+
+.manuscript {
+    min-width: 0;
 }
 
 .manuscript-inner {
     max-width: 760px;
     margin: 0 auto;
-    padding: 36px 8px;
+    padding: 36px 32px;
 }
 
 .cm-host {
@@ -201,13 +195,14 @@ body {
 }
 
 .ledger {
-    background: var(--ledger-bg);
-    color: var(--ledger-text);
-    border-radius: 14px;
+    background: var(--surface-2);
+    border-left: 1px solid var(--border);
     padding: 22px 20px;
-    box-shadow: var(--shadow);
     position: sticky;
-    top: 32px;
+    top: 0;
+    align-self: start;
+    max-height: 100vh;
+    overflow-y: auto;
 }
 
 .ledger h2 {
@@ -215,7 +210,7 @@ body {
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.14em;
-    color: var(--ledger-text-muted);
+    color: var(--text-muted);
     margin: 0 0 16px;
 }
 
@@ -225,7 +220,7 @@ body {
     gap: 16px;
     padding-bottom: 18px;
     margin-bottom: 16px;
-    border-bottom: 1px solid var(--ledger-border);
+    border-bottom: 1px solid var(--border);
 }
 
 .gauge-wrap {
@@ -239,7 +234,7 @@ body {
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    background: conic-gradient(var(--gauge-color, var(--mark-teal)) calc(var(--score, 100) * 1%), var(--ledger-surface) 0);
+    background: conic-gradient(var(--gauge-color, var(--mark-teal)) calc(var(--score, 100) * 1%), var(--border) 0);
     -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 9px));
     mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 9px));
 }
@@ -258,6 +253,7 @@ body {
     font-size: 20px;
     font-weight: 700;
     line-height: 1;
+    color: var(--text);
 }
 
 .gauge-copy {
@@ -270,11 +266,12 @@ body {
     font-size: 15px;
     font-weight: 600;
     margin: 0 0 4px;
+    color: var(--text);
 }
 
 .gauge-copy .sub {
     font-size: 12px;
-    color: var(--ledger-text-muted);
+    color: var(--text-muted);
     line-height: 1.5;
     margin: 0;
 }
@@ -284,27 +281,35 @@ body {
     justify-content: space-between;
     align-items: center;
     font-size: 12.5px;
-    color: var(--ledger-text-muted);
+    color: var(--text-muted);
     margin-bottom: 14px;
 }
 
 .ledger-lang {
     font-family: var(--font-mono);
-    color: var(--ledger-text);
+    color: var(--text);
 }
 
+/* One bordered strip with internal dividers, not three separate floating chips -- reads as
+   a single stat bar instead of scattered boxes. */
 .counts {
     display: flex;
-    gap: 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
     margin-bottom: 16px;
+    background: var(--surface);
 }
 
 .count {
     flex: 1;
     text-align: center;
-    border-radius: 9px;
     padding: 10px 4px;
-    background: var(--ledger-surface);
+    border-right: 1px solid var(--border);
+}
+
+.count:last-child {
+    border-right: none;
 }
 
 .count .n {
@@ -319,7 +324,7 @@ body {
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--ledger-text-muted);
+    color: var(--text-muted);
 }
 
 .count--error .n {
@@ -334,34 +339,43 @@ body {
     color: var(--mark-teal);
 }
 
+/* Same idea as .counts: one bordered list, findings separated by hairlines, instead of a
+   stack of individually-boxed cards. */
 .findings-list {
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
     max-height: 46vh;
     overflow-y: auto;
+    background: var(--surface);
 }
 
 .finding {
-    border-left: 3px solid var(--ledger-border);
-    padding: 9px 11px;
-    border-radius: 0 8px 8px 0;
-    background: var(--ledger-surface);
+    border-left: 3px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+}
+
+.finding:last-child {
+    border-bottom: none;
 }
 
 .finding p {
     margin: 4px 0 0;
     font-size: 12.5px;
     line-height: 1.5;
+    color: var(--text);
 }
 
 .finding .rule-tag {
     font-family: var(--font-mono);
     font-size: 10.5px;
-    color: var(--ledger-text-muted);
+    color: var(--text-muted);
 }
 
 .finding--error {
@@ -389,13 +403,12 @@ body {
 
 .finding--clean {
     border-left-color: var(--mark-teal);
-    color: var(--ledger-text-muted);
+    color: var(--text-muted);
     font-size: 12.5px;
 }
 
 .finding.active {
-    background: #262d43;
-    transform: translateX(2px);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .colophon {
@@ -405,10 +418,9 @@ body {
     text-align: center;
 }
 
-/* Below this width the two-column desk (manuscript + sticky ledger) becomes a normally
-   scrolling single column: manuscript stacked above ledger, both full-width. That is the
-   layout users expect on a phone; the sticky/side-by-side pattern above just crowds a
-   narrow screen instead of wrapping it. */
+/* Below this width the workbench stops being a fixed-viewport two-column card (manuscript +
+   sticky ledger) and becomes a normally scrolling single column: manuscript stacked above
+   ledger, both full-width. That is the layout users expect on a phone. */
 @media (max-width: 900px) {
     .masthead {
         padding: 14px 16px;
@@ -442,13 +454,12 @@ body {
         padding: 16px;
     }
 
-    .layout {
+    .workbench {
         grid-template-columns: 1fr;
-        gap: 16px;
     }
 
     .manuscript-inner {
-        padding: 22px 8px;
+        padding: 22px 16px;
     }
 
     .cm-host {
@@ -456,7 +467,10 @@ body {
     }
 
     .ledger {
+        border-left: none;
+        border-top: 1px solid var(--border);
         position: static;
+        max-height: none;
     }
 
     .findings-list {
