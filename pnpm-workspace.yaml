@@ -11,6 +11,11 @@ allowBuilds:
   "@aitytech/textlint-rule-preset-ai-writing-en@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-en.git#b1a3c5b6a06c22af6aba604b2139391113188087": true
   "@aitytech/textlint-rule-preset-ai-writing-vi@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#bb0f17b2d6ac3b72e1fe283ab2a5aec5d1ce8632": true
   "@aitytech/textlint-rule-preset-ai-writing-ja@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-ja.git#b311fa6fda59a855943e3da89fdf01fa4b895ac1": true
+  # Standard native-binary postinstall scripts needed by the RN/Metro toolchain (apps/mobile).
+  # esbuild: well-known bundler binary. unrs-resolver: Rust-based module resolver (oxc
+  # ecosystem), a transitive dependency of Metro tooling. Both widely used, not AITYTECH code.
+  esbuild: true
+  unrs-resolver: true
 
 minimumReleaseAgeExclude:
   - '@vitejs/plugin-react@6.1.1'

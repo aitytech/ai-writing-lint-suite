@@ -8,7 +8,8 @@
   "aria": {
     "draft": "Draft",
     "findings": "Findings",
-    "language": "Language"
+    "language": "Language",
+    "themeToggle": "Toggle light/dark theme"
   },
   "ledger": {
     "heading": "Reading",
@@ -16,6 +17,15 @@
     "findingsCount_one": "{{count}} finding",
     "findingsCount_other": "{{count}} findings",
     "clean": "Nothing flagged. Clean read."
+  },
+  "gauge": {
+    "caption": "clarity",
+    "cleanStatus": "Reads clean",
+    "cleanSub": "No AI-writing tells caught in this draft.",
+    "minorStatus": "A pass or two left",
+    "minorSub": "A few phrases still read machine-typed.",
+    "needsStatus": "Needs real work",
+    "needsSub": "Several AI-writing tells caught — worth a rewrite, not just edits."
   },
   "severity": {
     "error": "error",

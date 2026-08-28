@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { EditorView, keymap } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
@@ -10,6 +11,27 @@ import { lintFindingsField, setFindings } from "./lint/decorations";
 import { markdownLiveStyle } from "./lint/markdownTheme";
 
 const LANGUAGE_MODES: Array<"auto" | Language> = ["auto", "en", "vi", "ja"];
+
+type ThemePref = "system" | "light" | "dark";
+const THEME_STORAGE_KEY = "tell-tale-theme";
+const THEME_CYCLE: Record<ThemePref, ThemePref> = { system: "light", light: "dark", dark: "system" };
+const THEME_ICON: Record<ThemePref, string> = { system: "◐", light: "☀︎", dark: "☾" };
+
+function readStoredTheme(): ThemePref {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    return stored === "light" || stored === "dark" ? stored : "system";
+}
+
+/**
+ * Heuristic 0-100 "clarity" score for the gauge -- a quick visual read, not a scoring
+ * system to optimize against. Errors (hard AI-writing tells) weigh far more than info-level
+ * notes (style nudges), so one real tell drops the score noticeably while a pile of minor
+ * notes doesn't crater it.
+ */
+function clarityScore(counts: { error: number; warning: number; info: number }): number {
+    const penalty = counts.error * 15 + counts.warning * 8 + counts.info * 3;
+    return Math.max(0, Math.min(100, 100 - penalty));
+}
 
 const SAMPLE_DRAFT = `# 26 nhan vien AI
 
@@ -31,6 +53,17 @@ export function App() {
     const [isLinting, setIsLinting] = useState(false);
     const [activeFinding, setActiveFinding] = useState<LintFinding | null>(null);
     const [jaUnavailable, setJaUnavailable] = useState(false);
+    const [themePref, setThemePref] = useState<ThemePref>(readStoredTheme);
+
+    useEffect(() => {
+        if (themePref === "system") {
+            delete document.documentElement.dataset.theme;
+            window.localStorage.removeItem(THEME_STORAGE_KEY);
+        } else {
+            document.documentElement.dataset.theme = themePref;
+            window.localStorage.setItem(THEME_STORAGE_KEY, themePref);
+        }
+    }, [themePref]);
 
     const effectiveLanguage = useMemo(() => {
         if (languageMode !== "auto") return languageMode;
@@ -120,75 +153,111 @@ export function App() {
 
     const counts = result?.counts ?? { error: 0, warning: 0, info: 0 };
     const total = counts.error + counts.warning + counts.info;
+    const score = clarityScore(counts);
+    const gaugeColor = score >= 85 ? "var(--mark-teal)" : score >= 60 ? "var(--mark-amber)" : "var(--mark-red)";
+    const gaugeStatusKey = score >= 85 ? "gauge.cleanStatus" : score >= 60 ? "gauge.minorStatus" : "gauge.needsStatus";
+    const gaugeSubKey = score >= 85 ? "gauge.cleanSub" : score >= 60 ? "gauge.minorSub" : "gauge.needsSub";
 
     return (
         <div className="desk">
             <header className="masthead">
-                <span className="glyph" aria-hidden="true">
-                    🖋️
-                </span>
-                <h1>Tell-Tale</h1>
-                <div className="lang-toggle" role="group" aria-label={t("aria.language")}>
-                    {LANGUAGE_MODES.map((mode) => (
-                        <button
-                            key={mode}
-                            type="button"
-                            className={mode === languageMode ? "active" : ""}
-                            onClick={() => setLanguageMode(mode)}
-                        >
-                            {t(`lang.${mode}`)}
-                        </button>
-                    ))}
+                <div className="masthead-inner">
+                    <span className="glyph" aria-hidden="true">
+                        🖋️
+                    </span>
+                    <h1>Tell-Tale</h1>
+                    <button
+                        type="button"
+                        className="theme-toggle"
+                        aria-label={t("aria.themeToggle")}
+                        title={themePref}
+                        onClick={() => setThemePref((prev) => THEME_CYCLE[prev])}
+                    >
+                        {THEME_ICON[themePref]}
+                    </button>
+                    <div className="lang-toggle" role="group" aria-label={t("aria.language")}>
+                        {LANGUAGE_MODES.map((mode) => (
+                            <button
+                                key={mode}
+                                type="button"
+                                className={mode === languageMode ? "active" : ""}
+                                onClick={() => setLanguageMode(mode)}
+                            >
+                                {t(`lang.${mode}`)}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </header>
 
-            <main className="layout">
-                <section className="manuscript" aria-label={t("aria.draft")}>
-                    <div ref={containerRef} className="cm-host" />
-                </section>
-
-                <aside className="ledger" aria-label={t("aria.findings")}>
-                    <h2>{t("ledger.heading")}</h2>
-                    <div className="ledger-status">
-                        {isLinting ? t("ledger.checking") : t("ledger.findingsCount", { count: total })}
-                        <span className="ledger-lang">{effectiveLanguage.toUpperCase()}</span>
-                    </div>
-
-                    {jaUnavailable && <p className="ja-gap-note">{t("jaGapNote")}</p>}
-
-                    <div className="counts">
-                        <div className="count count--error">
-                            <span className="n">{counts.error}</span>
-                            <span className="label">{t("severity.error")}</span>
+            <div className="stage">
+                <main className="layout">
+                    <section className="manuscript" aria-label={t("aria.draft")}>
+                        <div className="manuscript-inner">
+                            <div ref={containerRef} className="cm-host" />
                         </div>
-                        <div className="count count--warning">
-                            <span className="n">{counts.warning}</span>
-                            <span className="label">{t("severity.warning")}</span>
-                        </div>
-                        <div className="count count--info">
-                            <span className="n">{counts.info}</span>
-                            <span className="label">{t("severity.info")}</span>
-                        </div>
-                    </div>
+                    </section>
 
-                    <ul className="findings-list">
-                        {result?.findings.map((f, i) => (
-                            <li
-                                key={`${f.ruleId}-${f.range[0]}-${i}`}
-                                className={`finding finding--${f.severity} ${activeFinding === f ? "active" : ""}`}
-                                onMouseEnter={() => setActiveFinding(f)}
-                                onMouseLeave={() => setActiveFinding(null)}
-                            >
-                                <span className="rule-tag">{f.ruleId}</span>
-                                <p>{f.message}</p>
-                            </li>
-                        ))}
-                        {result && result.findings.length === 0 && !isLinting && (
-                            <li className="finding finding--clean">{t("ledger.clean")}</li>
-                        )}
-                    </ul>
-                </aside>
-            </main>
+                    <aside className="ledger" aria-label={t("aria.findings")}>
+                        <h2>{t("ledger.heading")}</h2>
+
+                        <div className="gauge-row">
+                            <div className="gauge-wrap">
+                                <div
+                                    className="gauge"
+                                    style={{ "--score": score, "--gauge-color": gaugeColor } as CSSProperties}
+                                />
+                                <div className="gauge-readout">
+                                    <span className="n">{score}</span>
+                                </div>
+                            </div>
+                            <div className="gauge-copy">
+                                <p className="status">{t(gaugeStatusKey)}</p>
+                                <p className="sub">{t(gaugeSubKey)}</p>
+                            </div>
+                        </div>
+
+                        <div className="ledger-status">
+                            {isLinting ? t("ledger.checking") : t("ledger.findingsCount", { count: total })}
+                            <span className="ledger-lang">{effectiveLanguage.toUpperCase()}</span>
+                        </div>
+
+                        {jaUnavailable && <p className="ja-gap-note">{t("jaGapNote")}</p>}
+
+                        <div className="counts">
+                            <div className="count count--error">
+                                <span className="n">{counts.error}</span>
+                                <span className="label">{t("severity.error")}</span>
+                            </div>
+                            <div className="count count--warning">
+                                <span className="n">{counts.warning}</span>
+                                <span className="label">{t("severity.warning")}</span>
+                            </div>
+                            <div className="count count--info">
+                                <span className="n">{counts.info}</span>
+                                <span className="label">{t("severity.info")}</span>
+                            </div>
+                        </div>
+
+                        <ul className="findings-list">
+                            {result?.findings.map((f, i) => (
+                                <li
+                                    key={`${f.ruleId}-${f.range[0]}-${i}`}
+                                    className={`finding finding--${f.severity} ${activeFinding === f ? "active" : ""}`}
+                                    onMouseEnter={() => setActiveFinding(f)}
+                                    onMouseLeave={() => setActiveFinding(null)}
+                                >
+                                    <span className="rule-tag">{f.ruleId}</span>
+                                    <p>{f.message}</p>
+                                </li>
+                            ))}
+                            {result && result.findings.length === 0 && !isLinting && (
+                                <li className="finding finding--clean">{t("ledger.clean")}</li>
+                            )}
+                        </ul>
+                    </aside>
+                </main>
+            </div>
 
             <footer className="colophon">{t("footer.privacy")}</footer>
         </div>

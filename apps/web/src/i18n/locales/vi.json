@@ -8,13 +8,23 @@
   "aria": {
     "draft": "Bản nháp",
     "findings": "Kết quả",
-    "language": "Ngôn ngữ"
+    "language": "Ngôn ngữ",
+    "themeToggle": "Đổi giao diện sáng/tối"
   },
   "ledger": {
     "heading": "Soát lỗi",
     "checking": "đang kiểm tra…",
     "findingsCount_other": "{{count}} phát hiện",
     "clean": "Không có gì bị gắn cờ. Văn bản sạch."
+  },
+  "gauge": {
+    "caption": "độ rõ",
+    "cleanStatus": "Đọc mượt",
+    "cleanSub": "Không phát hiện dấu vết AI trong bản nháp này.",
+    "minorStatus": "Còn vài chỗ cần sửa",
+    "minorSub": "Một vài cụm vẫn đọc như máy viết.",
+    "needsStatus": "Cần viết lại",
+    "needsSub": "Phát hiện nhiều dấu vết AI — nên viết lại, không chỉ chỉnh sửa."
   },
   "severity": {
     "error": "lỗi",

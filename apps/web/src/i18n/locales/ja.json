@@ -8,13 +8,23 @@
   "aria": {
     "draft": "下書き",
     "findings": "結果",
-    "language": "言語"
+    "language": "言語",
+    "themeToggle": "ライト/ダークテーマ切り替え"
   },
   "ledger": {
     "heading": "読み取り",
     "checking": "確認中…",
     "findingsCount_other": "{{count}} 件の指摘",
     "clean": "指摘なし。問題ありません。"
+  },
+  "gauge": {
+    "caption": "明瞭度",
+    "cleanStatus": "自然な文章です",
+    "cleanSub": "この下書きにAIらしい特徴は見つかりませんでした。",
+    "minorStatus": "もう少し手直しを",
+    "minorSub": "一部の表現がまだ機械的です。",
+    "needsStatus": "書き直しが必要です",
+    "needsSub": "AIらしい特徴が複数見つかりました — 修正ではなく書き直しを検討してください。"
   },
   "severity": {
     "error": "エラー",

@@ -3,6 +3,7 @@
     --paper-50: #efe9d8;
     --paper-100: #e3dcc6;
     --accent: #33477a;
+    --accent-soft: #5a6fa3;
     --mark-red: #9c3b34;
     --mark-amber: #a97c2f;
     --mark-teal: #3f7268;
@@ -13,10 +14,12 @@
     --text: var(--ink-900);
     --text-muted: #5c5646;
     --border: #d8cfb2;
+    --shadow: 0 1px 2px rgba(22, 27, 38, 0.04), 0 16px 32px -20px rgba(22, 27, 38, 0.18);
     --ledger-bg: var(--ink-900);
+    --ledger-surface: #1f2536;
     --ledger-text: var(--paper-50);
     --ledger-text-muted: #9aa0b4;
-    --ledger-border: #3a4258;
+    --ledger-border: #343c53;
 
     --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
     --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
@@ -25,26 +28,30 @@
 
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-        --bg: #10131c;
-        --surface: #1a1f2e;
-        --surface-2: #232939;
+        --bg: #0c0e15;
+        --surface: #171c2a;
+        --surface-2: #212739;
         --text: #ede6d3;
         --text-muted: #a39d89;
-        --border: #343c53;
-        --ledger-bg: #05070c;
-        --ledger-border: #262c3f;
+        --border: #2c3348;
+        --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 24px 48px -24px rgba(0, 0, 0, 0.6);
+        --ledger-bg: #05060a;
+        --ledger-surface: #10131c;
+        --ledger-border: #22283a;
     }
 }
 
 :root[data-theme="dark"] {
-    --bg: #10131c;
-    --surface: #1a1f2e;
-    --surface-2: #232939;
+    --bg: #0c0e15;
+    --surface: #171c2a;
+    --surface-2: #212739;
     --text: #ede6d3;
     --text-muted: #a39d89;
-    --border: #343c53;
-    --ledger-bg: #05070c;
-    --ledger-border: #262c3f;
+    --border: #2c3348;
+    --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 24px 48px -24px rgba(0, 0, 0, 0.6);
+    --ledger-bg: #05060a;
+    --ledger-surface: #10131c;
+    --ledger-border: #22283a;
 }
 
 * {
@@ -65,21 +72,40 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+    .lang-toggle button,
+    .theme-toggle,
+    .finding,
+    .gauge {
+        transition:
+            background-color 0.15s ease,
+            color 0.15s ease,
+            transform 0.15s ease;
+    }
+}
+
 .desk {
     display: flex;
     flex-direction: column;
     height: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 24px;
 }
 
 .masthead {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 28px 0 20px;
+    padding: 18px 32px;
+    background: var(--surface);
     border-bottom: 1px solid var(--border);
+}
+
+.masthead-inner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
 .masthead .glyph {
@@ -89,10 +115,30 @@ body {
 
 .masthead h1 {
     font-family: var(--font-display);
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 600;
     margin: 0;
     flex: 1;
+    letter-spacing: -0.01em;
+}
+
+.theme-toggle {
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-toggle:hover {
+    border-color: var(--accent-soft);
 }
 
 .lang-toggle {
@@ -118,35 +164,50 @@ body {
 .lang-toggle button.active {
     background: var(--surface);
     color: var(--accent);
+    box-shadow: 0 1px 2px rgba(22, 27, 38, 0.12);
+}
+
+.stage {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px;
 }
 
 .layout {
-    flex: 1;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
-    gap: 28px;
-    padding: 28px 0;
-    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 32px;
+    max-width: 1600px;
+    margin: 0 auto;
+    align-items: start;
 }
 
 .manuscript {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 28px 32px;
-    overflow-y: auto;
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 8px;
+}
+
+.manuscript-inner {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 36px 8px;
 }
 
 .cm-host {
-    height: 100%;
+    min-height: 60vh;
 }
 
 .ledger {
     background: var(--ledger-bg);
     color: var(--ledger-text);
-    border-radius: 10px;
-    padding: 20px 18px;
-    overflow-y: auto;
+    border-radius: 14px;
+    padding: 22px 20px;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 32px;
 }
 
 .ledger h2 {
@@ -155,7 +216,67 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.14em;
     color: var(--ledger-text-muted);
-    margin: 0 0 10px;
+    margin: 0 0 16px;
+}
+
+.gauge-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 18px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--ledger-border);
+}
+
+.gauge-wrap {
+    position: relative;
+    width: 76px;
+    height: 76px;
+    flex-shrink: 0;
+}
+
+.gauge {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(var(--gauge-color, var(--mark-teal)) calc(var(--score, 100) * 1%), var(--ledger-surface) 0);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 9px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 9px));
+}
+
+.gauge-readout {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.gauge-readout .n {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.gauge-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.gauge-copy .status {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 4px;
+}
+
+.gauge-copy .sub {
+    font-size: 12px;
+    color: var(--ledger-text-muted);
+    line-height: 1.5;
+    margin: 0;
 }
 
 .ledger-status {
@@ -164,8 +285,6 @@ body {
     align-items: center;
     font-size: 12.5px;
     color: var(--ledger-text-muted);
-    padding-bottom: 14px;
-    border-bottom: 1px solid var(--ledger-border);
     margin-bottom: 14px;
 }
 
@@ -183,15 +302,15 @@ body {
 .count {
     flex: 1;
     text-align: center;
-    border-radius: 8px;
-    padding: 8px 4px;
-    background: rgba(255, 255, 255, 0.04);
+    border-radius: 9px;
+    padding: 10px 4px;
+    background: var(--ledger-surface);
 }
 
 .count .n {
     display: block;
     font-family: var(--font-mono);
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 700;
 }
 
@@ -222,13 +341,15 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    max-height: 46vh;
+    overflow-y: auto;
 }
 
 .finding {
     border-left: 3px solid var(--ledger-border);
-    padding: 8px 10px;
-    border-radius: 0 6px 6px 0;
-    background: rgba(255, 255, 255, 0.03);
+    padding: 9px 11px;
+    border-radius: 0 8px 8px 0;
+    background: var(--ledger-surface);
 }
 
 .finding p {
@@ -261,8 +382,8 @@ body {
     color: var(--mark-amber);
     background: rgba(169, 124, 47, 0.12);
     border: 1px solid rgba(169, 124, 47, 0.35);
-    border-radius: 6px;
-    padding: 8px 10px;
+    border-radius: 8px;
+    padding: 9px 11px;
     margin: 0 0 14px;
 }
 
@@ -273,12 +394,72 @@ body {
 }
 
 .finding.active {
-    background: rgba(255, 255, 255, 0.08);
+    background: #262d43;
+    transform: translateX(2px);
 }
 
 .colophon {
-    padding: 14px 0 24px;
+    padding: 14px 0 20px;
     font-size: 12px;
     color: var(--text-muted);
     text-align: center;
+}
+
+/* Below this width the two-column desk (manuscript + sticky ledger) becomes a normally
+   scrolling single column: manuscript stacked above ledger, both full-width. That is the
+   layout users expect on a phone; the sticky/side-by-side pattern above just crowds a
+   narrow screen instead of wrapping it. */
+@media (max-width: 900px) {
+    .masthead {
+        padding: 14px 16px;
+    }
+
+    .masthead-inner {
+        flex-wrap: wrap;
+        row-gap: 10px;
+    }
+
+    .masthead h1 {
+        font-size: 18px;
+        flex-basis: 0;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .lang-toggle {
+        order: 1;
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .lang-toggle button {
+        flex: 1;
+    }
+
+    .stage {
+        padding: 16px;
+    }
+
+    .layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .manuscript-inner {
+        padding: 22px 8px;
+    }
+
+    .cm-host {
+        min-height: 40vh;
+    }
+
+    .ledger {
+        position: static;
+    }
+
+    .findings-list {
+        max-height: none;
+    }
 }
