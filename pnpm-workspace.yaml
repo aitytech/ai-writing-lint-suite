@@ -1,0 +1,13 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# The AITYTECH EN/VI presets ship TypeScript source only (no committed build output, by design —
+# see their repos' "fix: stop committing lib/ build output" commits) and rely on a `prepare`
+# script (`npm run build`) to compile on install. pnpm blocks git-dependency build scripts by
+# default; explicitly allow these two, pinned to the exact commit hash in each package.json so
+# this allowlist can't silently start trusting a different commit.
+allowBuilds:
+  "@aitytech/textlint-rule-preset-ai-writing-en@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-en.git#b1a3c5b6a06c22af6aba604b2139391113188087": true
+  "@aitytech/textlint-rule-preset-ai-writing-vi@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#bb0f17b2d6ac3b72e1fe283ab2a5aec5d1ce8632": true
+  "@aitytech/textlint-rule-preset-ai-writing-ja@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-ja.git#b311fa6fda59a855943e3da89fdf01fa4b895ac1": true

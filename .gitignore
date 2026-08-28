@@ -1,0 +1,19 @@
+node_modules/
+dist/
+build/
+.turbo/
+*.log
+.DS_Store
+.env
+.env.local
+
+# React Native / iOS / macOS (added when those apps are scaffolded)
+ios/Pods/
+ios/build/
+macos/Pods/
+macos/build/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+
+# Vite
+.vite/
