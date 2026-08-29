@@ -248,8 +248,8 @@ importers:
         specifier: github:aitytech/suzume-wasm#3304cb9ad51b21a835a292ab7efc405df15ae00b
         version: https://codeload.github.com/aitytech/suzume-wasm/tar.gz/3304cb9ad51b21a835a292ab7efc405df15ae00b
       '@aitytech/textlint-rule-preset-ai-writing-en':
-        specifier: github:aitytech/textlint-rule-preset-ai-writing-en#b1a3c5b6a06c22af6aba604b2139391113188087
-        version: git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-en.git#b1a3c5b6a06c22af6aba604b2139391113188087
+        specifier: github:aitytech/textlint-rule-preset-ai-writing-en#3ddc7d5a5c0d6dab04d2bfbd05d9f63a3ba7f2fc
+        version: git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-en.git#3ddc7d5a5c0d6dab04d2bfbd05d9f63a3ba7f2fc
       '@aitytech/textlint-rule-preset-ai-writing-ja':
         specifier: github:aitytech/textlint-rule-preset-ai-writing-ja#b3e70ea2186257317ce3f64e4ef4fbaff76bc3d8
         version: git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-ja.git#b3e70ea2186257317ce3f64e4ef4fbaff76bc3d8(supports-color@10.2.2)
@@ -323,9 +323,9 @@ packages:
     version: 0.9.10-aitytech.2
     engines: {node: '>=18.0.0'}
 
-  '@aitytech/textlint-rule-preset-ai-writing-en@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-en.git#b1a3c5b6a06c22af6aba604b2139391113188087':
-    resolution: {commit: b1a3c5b6a06c22af6aba604b2139391113188087, repo: git@github.com:aitytech/textlint-rule-preset-ai-writing-en.git, type: git}
-    version: 0.5.0
+  '@aitytech/textlint-rule-preset-ai-writing-en@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-en.git#3ddc7d5a5c0d6dab04d2bfbd05d9f63a3ba7f2fc':
+    resolution: {commit: 3ddc7d5a5c0d6dab04d2bfbd05d9f63a3ba7f2fc, repo: git@github.com:aitytech/textlint-rule-preset-ai-writing-en.git, type: git}
+    version: 0.6.0
 
   '@aitytech/textlint-rule-preset-ai-writing-ja@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-ja.git#b3e70ea2186257317ce3f64e4ef4fbaff76bc3d8':
     resolution: {commit: b3e70ea2186257317ce3f64e4ef4fbaff76bc3d8, repo: git@github.com:aitytech/textlint-rule-preset-ai-writing-ja.git, type: git}
@@ -7253,7 +7253,7 @@ snapshots:
 
   '@aitytech/suzume@https://codeload.github.com/aitytech/suzume-wasm/tar.gz/3304cb9ad51b21a835a292ab7efc405df15ae00b': {}
 
-  '@aitytech/textlint-rule-preset-ai-writing-en@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-en.git#b1a3c5b6a06c22af6aba604b2139391113188087':
+  '@aitytech/textlint-rule-preset-ai-writing-en@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-en.git#3ddc7d5a5c0d6dab04d2bfbd05d9f63a3ba7f2fc':
     dependencies:
       '@textlint/regexp-string-matcher': 2.0.2
       '@textlint/types': 15.8.0

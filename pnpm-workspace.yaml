@@ -17,7 +17,7 @@ blockExoticSubdeps: false
 # default; explicitly allow these two, pinned to the exact commit hash in each package.json so
 # this allowlist can't silently start trusting a different commit.
 allowBuilds:
-  "@aitytech/textlint-rule-preset-ai-writing-en@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-en.git#b1a3c5b6a06c22af6aba604b2139391113188087": true
+  "@aitytech/textlint-rule-preset-ai-writing-en@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-en.git#3ddc7d5a5c0d6dab04d2bfbd05d9f63a3ba7f2fc": true
   "@aitytech/textlint-rule-preset-ai-writing-vi@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#a3c25c7a9b56bf17ab9faf125f309b594dfaca6e": true
   "@aitytech/textlint-rule-preset-ai-writing-ja@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-ja.git#b3e70ea2186257317ce3f64e4ef4fbaff76bc3d8": true
   # @aitytech/suzume-wasm: same pattern -- TS-only prepare script (tsc), the WASM binary
