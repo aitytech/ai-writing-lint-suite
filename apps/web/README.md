@@ -23,10 +23,24 @@ pnpm --filter @aitytech/ai-writing-lint-web lint       # tsc --noEmit
 
 ## Deployment
 
-**Not deployed anywhere yet.** No hosting config exists in this directory (no Vercel/Netlify
-config, no CI workflow) — `pnpm build` produces a static `dist/` that hasn't been pointed at a
-host. Pick a static host (Cloudflare Pages fits naturally alongside `packages/mcp-server`'s
-Workers deployment) and wire it up when this is ready to ship.
+**Status: live**, on Cloudflare Pages (project name `writelikeyou`, fits alongside
+`packages/mcp-server`'s Workers deployment on the same account):
+
+```bash
+pnpm --filter @aitytech/ai-writing-lint-web build
+npx wrangler pages deploy dist --project-name=writelikeyou   # run from apps/web
+```
+
+Live at `https://writelikeyou.pages.dev` and `https://writelikeyou.aitytech.com` (custom
+domain, added via the Cloudflare API since this wrangler version's CLI has no `pages domain
+add` subcommand — the DNS `CNAME` record for a Pages custom domain isn't auto-created by that
+API call and needs `dns_records:write` scope, which this project's stored Cloudflare token
+doesn't have; added manually via the dashboard instead). Verified end-to-end with a real
+headless-browser check against the live URL (not just `curl` — this app needs JS to execute
+before there's anything to check): page renders, live-lint runs on keystroke, zero console
+errors, matching the local dev/preview behavior exactly.
+
+No CI workflow yet — redeploy is a manual `wrangler pages deploy` after `pnpm build`.
 
 ## Structure
 

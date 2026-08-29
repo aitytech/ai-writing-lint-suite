@@ -301,24 +301,22 @@ Add to `claude_desktop_config.json`:
 
 ## Deploying to Cloudflare Workers
 
-**Status: not yet deployed to production.** Everything above has been verified against
-`wrangler dev` (local simulation) only — `wrangler deployments list` confirms no
-`writelikeyou-mcp` Worker exists yet on the linked Cloudflare account. Remaining steps to go
-live:
+**Status: live in production**, deployed via `pnpm --filter @aitytech/writelikeyou-mcp run
+deploy` (note the explicit `run` — `pnpm --filter <pkg> deploy` without it invokes pnpm's own
+built-in `deploy` command, not this package's script, and fails with a confusing
+`ERR_PNPM_INVALID_DEPLOY_TARGET` instead of running `wrangler deploy`). Live at
+`https://mcp.writelikeyou.aitytech.com/mcp`, verified with a real `initialize` and `tools/call`
+round-trip against the production URL (not `wrangler dev`) after the custom domain's edge
+certificate finished provisioning (took under two minutes after first deploy).
 
-1. `pnpm --filter @aitytech/writelikeyou-mcp deploy` (runs the wasm copy step, then
-   `wrangler deploy`).
-2. Point `mcp.writelikeyou.aitytech.com` at the deployed Worker (Custom Domains in
-   `wrangler.jsonc` take a bare hostname only — no wildcard, no path; the `/mcp` route comes
-   from `createMcpHandler`'s own default, not from this config).
-3. Re-run the curl verification above against the real URL and capture the `cf-cpu-time`
-   response header for a real CPU-ms number — everything measured so far is `wrangler dev`
-   wall-clock time (see below), not Cloudflare's actual per-request CPU metering.
-4. Add this endpoint to a ChatGPT connector / plugin manifest once the domain is live (needed
-   for OpenAI's app-directory submission: domain verification, identity verification, 5+3 test
-   cases — not started).
+Remaining, not yet done:
 
-## Performance (measured, local `wrangler dev`)
+- Add this endpoint to a ChatGPT connector once needed (needs OpenAI's app-directory
+  submission for a *public* listing — domain verification, identity verification, 5+3 test
+  cases; a *private*/personal connector via ChatGPT's Developer Mode just needs the URL above,
+  no OpenAI submission at all).
+
+## Performance
 
 | | Cold (1st request/isolate) | Warm |
 |---|---|---|
@@ -334,10 +332,14 @@ live:
 - `configureSuzumeWasm()` only *registers* the precompiled module — it doesn't instantiate
   Suzume eagerly, so EN-only requests never pay any WASM cost at all. VI's nspell dictionary
   is plain JS data, not WASM, so it has no comparable "instantiate" cost either way.
-- These numbers are local wall-clock time through `wrangler dev`'s workerd simulation,
-  including HTTP overhead on localhost — not Cloudflare's real edge CPU-time metering. Get a
-  real number after this package is actually deployed (see "Deploying to Cloudflare Workers"
-  below).
+- These are `wrangler dev`'s local workerd-simulation wall-clock numbers, not Cloudflare's real
+  edge CPU-time metering — checked for a `cf-cpu-time` response header against the live
+  production URL to get a real number and confirmed Cloudflare doesn't expose one to the
+  client at all (per-request CPU time is dashboard/Logpush-only, not an HTTP response header),
+  so this table stays as the best available estimate rather than being silently left stale.
+  The production `initialize`/`tools/call` round-trips above returned in well under a second
+  end-to-end (network + edge + compute), consistent with this table, but that number includes
+  network RTT and isn't a clean substitute for real CPU-ms.
 
 ## Security
 
