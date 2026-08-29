@@ -35,7 +35,12 @@ await configureSuzumeWasm(suzumeWasmModule as WebAssembly.Module);
 // so a request can't spoof a Host header to route around Cloudflare, and a browser page on
 // an unrelated site can't quietly call this endpoint on a visitor's behalf and burn through
 // the free-tier request quota under our name.
-const handler = createMcpHandler(createServer, {
+// Wrapped rather than passed directly: createServer()'s single param is its own
+// {checkEnglishGrammar} options bag (see server.ts), not createMcpHandler's per-request
+// McpRequestContext -- this transport never injects a grammar checker (see stdio.ts and
+// lint-core/src/harper.ts for why), so the wrapper just discards ctx and calls createServer
+// with no options.
+const handler = createMcpHandler(() => createServer(), {
     allowedHostnames: ["mcp.writelikeyou.aitytech.com", "localhost", "127.0.0.1"],
     allowedOriginHostnames: ["mcp.writelikeyou.aitytech.com"]
 });

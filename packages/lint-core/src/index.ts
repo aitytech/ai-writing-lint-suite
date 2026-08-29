@@ -56,6 +56,14 @@ export type LintFinding = {
      */
     range: readonly [number, number];
     severity: LintSeverity;
+    /**
+     * Concrete replacement text(s) for this exact span, when the source engine computed one
+     * (currently: Harper's EN grammar/spelling checks only -- textlint-sourced AI-writing-tell
+     * findings never set this, since "the fix" there is a substantial rewrite, not a drop-in
+     * replacement; see lintText()'s own guidance to callers about that distinction). Absent,
+     * not an empty array, when no engine-computed suggestion exists.
+     */
+    suggestions?: string[];
 };
 
 export type LintResult = {
@@ -164,6 +172,44 @@ export async function lintText(
     for (const f of findings) counts[f.severity]++;
 
     return { language, findings, counts };
+}
+
+export type RuleInfo = {
+    ruleId: string;
+    /** "off" when the preset's own rulesConfig explicitly disables this rule (rare -- most
+     *  presets simply omit a rule entirely rather than including it disabled). */
+    severity: LintSeverity | "off";
+    /** The raw rulesConfig value for this rule (`true`, `false`, or an options object like
+     *  `{max: 3}`) -- surfaced as-is rather than reformatted, since callers introspecting
+     *  rules likely want the real configured options, not just the severity. */
+    options: unknown;
+};
+
+/**
+ * Introspection for callers that want to show/explain which rules are active rather than
+ * just receiving findings from them (e.g. an MCP client answering "why did this get
+ * flagged?" or "what does this tool even check for?"). Mechanical, not hand-curated: derived
+ * directly from each preset's own rules/rulesConfig maps, so it can never drift out of sync
+ * with what lintText() actually runs. Rule IDs are self-descriptive by convention in this
+ * codebase (no-em-dash-overuse, no-doubled-joshi, ...) -- full human descriptions live in
+ * each finding's own `message` at lint time, not duplicated here.
+ */
+export async function listRules(language: Language): Promise<RuleInfo[]> {
+    const preset = await presetFor(language);
+    return Object.keys(preset.rules).map((ruleId) => {
+        const config = preset.rulesConfig[ruleId as keyof typeof preset.rulesConfig] as unknown;
+        let severity: LintSeverity | "off";
+        if (config === false) severity = "off";
+        else if (typeof config === "object" && config !== null && "severity" in config) {
+            severity = (config as { severity: LintSeverity }).severity;
+        } else {
+            // textlint's own default for a rule enabled with just `true` (no explicit
+            // severity) is "error" -- confirmed against this codebase's own rules at
+            // runtime, not assumed from the spec alone.
+            severity = "error";
+        }
+        return { ruleId, severity, options: config };
+    });
 }
 
 /**

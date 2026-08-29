@@ -19,7 +19,7 @@ blockExoticSubdeps: false
 allowBuilds:
   "@aitytech/textlint-rule-preset-ai-writing-en@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-en.git#b1a3c5b6a06c22af6aba604b2139391113188087": true
   "@aitytech/textlint-rule-preset-ai-writing-vi@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#bb0f17b2d6ac3b72e1fe283ab2a5aec5d1ce8632": true
-  "@aitytech/textlint-rule-preset-ai-writing-ja@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-ja.git#8f3937785760f0a46eb7c178a81442d7fc04791b": true
+  "@aitytech/textlint-rule-preset-ai-writing-ja@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-ja.git#d70bdda0372dc149c80e7e03996705eb2f57a980": true
   # @aitytech/suzume-wasm: same pattern -- TS-only prepare script (tsc), the WASM binary
   # itself is committed prebuilt (see that repo's README for why).
   "@aitytech/suzume@https://codeload.github.com/aitytech/suzume-wasm/tar.gz/3304cb9ad51b21a835a292ab7efc405df15ae00b": true

@@ -68,6 +68,20 @@ curl -s -X POST http://localhost:8787/mcp \
 
 Expect `totalFindings: 1` with `no-ai-colon-continuation`.
 
+## Real grammar/spelling checking (Harper, EN, Claude Desktop only)
+
+On top of the AI-writing-tell rules, English text also gets a real grammar/spelling pass via
+[Harper](https://github.com/automattic/harper) (Apache-2.0, ~823 rules) -- but **only on the
+stdio transport**. Harper's WASM binary is ~15.6MB raw / ~8MB gzip even in its "slim" build --
+about 13x this package's entire current bundle, and alone well past Cloudflare Workers'
+free-tier 3MB gzip script-size cap. Its loading path also compiles WASM from a fetched URL at
+runtime, the same operation Workers disallows regardless of size (see the Suzume section
+above). Not worth porting for the size involved, so it's Desktop-only by deliberate scope
+decision, injected via dependency injection (`createServer({ checkEnglishGrammar })` in
+`stdio.ts`) so `worker.ts` has no import path that could reach it at all -- confirmed by
+`wrangler deploy --dry-run` and grepping the built `worker.js` for "harper" (zero matches)
+after wiring this in, not just assumed from the code structure.
+
 ## Claude Desktop (stdio)
 
 ```bash
@@ -113,8 +127,10 @@ live:
 | JA (WASM tokenizer path) | ~77ms | ~6–10ms |
 | EN/VI (regex-based, no WASM) | ~8ms | ~3–4ms |
 
-- **Bundle**: 2.57 MB raw / **604.92 KiB gzip** (`wrangler deploy --dry-run`) — well under the
-  free-tier 3MB gzip script-size limit.
+- **Bundle**: 2.96 MB raw / **676.06 KiB gzip** (`wrangler deploy --dry-run`) — well under the
+  free-tier 3MB gzip script-size limit. (Grew from 604.92 KiB after adding
+  textlint-rule-preset-japanese's kuromoji-free grammar rules — confirmed Harper's ~8MB gzip
+  WASM did NOT leak in: `worker.js` greps for zero "harper" matches after wiring it in.)
 - Cold cost is paid once per isolate (Cloudflare reuses isolates across requests), not once
   per request.
 - `configureSuzumeWasm()` only *registers* the precompiled module — it doesn't instantiate

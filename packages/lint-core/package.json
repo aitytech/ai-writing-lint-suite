@@ -6,18 +6,29 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./harper": {
+      "types": "./dist/harper.d.ts",
+      "default": "./dist/harper.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p .",
     "dev": "tsc -p . --watch"
   },
   "dependencies": {
-    "@aitytech/textlint-rule-preset-ai-writing-en": "github:aitytech/textlint-rule-preset-ai-writing-en#b1a3c5b6a06c22af6aba604b2139391113188087",
-    "@aitytech/textlint-rule-preset-ai-writing-vi": "github:aitytech/textlint-rule-preset-ai-writing-vi#bb0f17b2d6ac3b72e1fe283ab2a5aec5d1ce8632",
-    "@aitytech/textlint-rule-preset-ai-writing-ja": "github:aitytech/textlint-rule-preset-ai-writing-ja#8f3937785760f0a46eb7c178a81442d7fc04791b",
     "@aitytech/suzume": "github:aitytech/suzume-wasm#3304cb9ad51b21a835a292ab7efc405df15ae00b",
+    "@aitytech/textlint-rule-preset-ai-writing-en": "github:aitytech/textlint-rule-preset-ai-writing-en#b1a3c5b6a06c22af6aba604b2139391113188087",
+    "@aitytech/textlint-rule-preset-ai-writing-ja": "github:aitytech/textlint-rule-preset-ai-writing-ja#d70bdda0372dc149c80e7e03996705eb2f57a980",
+    "@aitytech/textlint-rule-preset-ai-writing-vi": "github:aitytech/textlint-rule-preset-ai-writing-vi#bb0f17b2d6ac3b72e1fe283ab2a5aec5d1ce8632",
     "@textlint/kernel": "15.8.0",
+    "@textlint/textlint-plugin-markdown": "15.8.0",
     "@textlint/textlint-plugin-text": "15.8.0",
-    "@textlint/textlint-plugin-markdown": "15.8.0"
+    "harper.js": "2.7.0"
   },
   "devDependencies": {
     "typescript": "7.0.2"
