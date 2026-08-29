@@ -254,8 +254,8 @@ importers:
         specifier: github:aitytech/textlint-rule-preset-ai-writing-ja#3a7e5b7cd25fee204dd4fc1bc557a80998206b78
         version: git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-ja.git#3a7e5b7cd25fee204dd4fc1bc557a80998206b78(supports-color@10.2.2)
       '@aitytech/textlint-rule-preset-ai-writing-vi':
-        specifier: github:aitytech/textlint-rule-preset-ai-writing-vi#886851d40705b005e795d2da773f057379e63e05
-        version: git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#886851d40705b005e795d2da773f057379e63e05
+        specifier: github:aitytech/textlint-rule-preset-ai-writing-vi#6a8bd637456fb0004cad373b4afa6accf93ca942
+        version: git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#6a8bd637456fb0004cad373b4afa6accf93ca942
       '@textlint/kernel':
         specifier: 15.8.0
         version: 15.8.0(supports-color@10.2.2)
@@ -331,9 +331,9 @@ packages:
     resolution: {commit: 3a7e5b7cd25fee204dd4fc1bc557a80998206b78, repo: git@github.com:aitytech/textlint-rule-preset-ai-writing-ja.git, type: git}
     version: 1.14.0
 
-  '@aitytech/textlint-rule-preset-ai-writing-vi@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#886851d40705b005e795d2da773f057379e63e05':
-    resolution: {commit: 886851d40705b005e795d2da773f057379e63e05, repo: git@github.com:aitytech/textlint-rule-preset-ai-writing-vi.git, type: git}
-    version: 0.6.0
+  '@aitytech/textlint-rule-preset-ai-writing-vi@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#6a8bd637456fb0004cad373b4afa6accf93ca942':
+    resolution: {commit: 6a8bd637456fb0004cad373b4afa6accf93ca942, repo: git@github.com:aitytech/textlint-rule-preset-ai-writing-vi.git, type: git}
+    version: 0.7.0
 
   '@babel/code-frame@7.10.4':
     resolution: {integrity: sha512-vG6SvB6oYEhvgisZNFRmRCUkLz11c7rp+tbNTynGqc6mS1d5ATd/sGyV6W0KZZnXRKMTzZDRgQT3Ou9jhpAfUg==}
@@ -7280,7 +7280,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@aitytech/textlint-rule-preset-ai-writing-vi@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#886851d40705b005e795d2da773f057379e63e05':
+  '@aitytech/textlint-rule-preset-ai-writing-vi@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#6a8bd637456fb0004cad373b4afa6accf93ca942':
     dependencies:
       '@textlint/regexp-string-matcher': 2.0.2
       '@textlint/types': 15.8.0
