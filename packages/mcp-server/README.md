@@ -1,4 +1,4 @@
-# @aitytech/writelikeyou-mcp
+# @aitytech/pencheck-mcp
 
 Exposes the shared lint engine (`@aitytech/ai-writing-lint-core`) as a single Model Context
 Protocol tool, `lint_text`, over two transports that share one `createServer()` factory
@@ -184,7 +184,7 @@ diacritic-restored word on their own.
 
 ```bash
 pnpm install                      # from the monorepo root
-pnpm --filter @aitytech/writelikeyou-mcp dev:http   # copies suzume-worker.wasm, then wrangler dev
+pnpm --filter @aitytech/pencheck-mcp dev:http   # copies suzume-worker.wasm, then wrangler dev
 ```
 
 `dev:http` and `deploy` both run `scripts/copy-suzume-wasm.mjs` first — Wrangler's wasm
@@ -307,10 +307,10 @@ is 14.
 -- no manual JSON editing.
 
 ```bash
-pnpm --filter @aitytech/writelikeyou-mcp package:mcpb
+pnpm --filter @aitytech/pencheck-mcp package:mcpb
 ```
 
-produces `packages/mcp-server/dist-mcpb/writelikeyou-<version>.mcpb`. The build
+produces `packages/mcp-server/dist-mcpb/pencheck-<version>.mcpb`. The build
 (`scripts/build-mcpb.mjs`) stages `@aitytech/ai-writing-lint-core` as a fully standalone
 package via a plain `npm install` (not `pnpm deploy`, which turned out to symlink workspace
 deps back to this monorepo rather than copy real files -- see the script's own header comment
@@ -330,7 +330,7 @@ Vale's native binary (~40MB) and Harper's WASM (~15MB) -- both real engines, not
 developing a rule) instead of the packaged bundle:
 
 ```bash
-pnpm --filter @aitytech/writelikeyou-mcp build
+pnpm --filter @aitytech/pencheck-mcp build
 ```
 
 Add to `claude_desktop_config.json`:
@@ -338,7 +338,7 @@ Add to `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "writelikeyou": {
+    "pencheck": {
       "command": "node",
       "args": ["/absolute/path/to/ai-writing-lint-suite/packages/mcp-server/dist/stdio.js"]
     }
@@ -348,11 +348,11 @@ Add to `claude_desktop_config.json`:
 
 ## Deploying to Cloudflare Workers
 
-**Status: live in production**, deployed via `pnpm --filter @aitytech/writelikeyou-mcp run
+**Status: live in production**, deployed via `pnpm --filter @aitytech/pencheck-mcp run
 deploy` (note the explicit `run` — `pnpm --filter <pkg> deploy` without it invokes pnpm's own
 built-in `deploy` command, not this package's script, and fails with a confusing
 `ERR_PNPM_INVALID_DEPLOY_TARGET` instead of running `wrangler deploy`). Live at
-`https://mcp.writelikeyou.aitytech.com/mcp`, verified with a real `initialize` and `tools/call`
+`https://mcp.pencheck.aitytech.com/mcp`, verified with a real `initialize` and `tools/call`
 round-trip against the production URL (not `wrangler dev`) after the custom domain's edge
 certificate finished provisioning (took under two minutes after first deploy).
 
@@ -391,6 +391,6 @@ Remaining, not yet done:
 ## Security
 
 `allowedHostnames`/`allowedOriginHostnames` in `worker.ts` are pinned to
-`mcp.writelikeyou.aitytech.com` (+ localhost) rather than left open, so a spoofed `Host` header
+`mcp.pencheck.aitytech.com` (+ localhost) rather than left open, so a spoofed `Host` header
 can't route around Cloudflare and an unrelated site can't silently call this endpoint on a
 visitor's behalf to burn through the free-tier request quota.

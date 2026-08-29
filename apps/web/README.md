@@ -1,4 +1,4 @@
-# WriteLikeYou (web)
+# PenCheck (web)
 
 Vite + React 19 + CodeMirror 6 editor for `@aitytech/ai-writing-lint-core`. Paste or write text,
 get live-flagged AI-writing tells with hover tooltips, severity filtering, and click-to-jump
@@ -23,15 +23,16 @@ pnpm --filter @aitytech/ai-writing-lint-web lint       # tsc --noEmit
 
 ## Deployment
 
-**Status: live**, on Cloudflare Pages (project name `writelikeyou`, fits alongside
-`packages/mcp-server`'s Workers deployment on the same account):
+**Status: live**, on Cloudflare Pages (project name `pencheck`, fits alongside
+`packages/mcp-server`'s Workers deployment on the same account -- renamed from `writelikeyou`
+to `pencheck` product-wide; see git history if you land on an old `writelikeyou.*` URL):
 
 ```bash
 pnpm --filter @aitytech/ai-writing-lint-web build
-npx wrangler pages deploy dist --project-name=writelikeyou   # run from apps/web
+npx wrangler pages deploy dist --project-name=pencheck   # run from apps/web
 ```
 
-Live at `https://writelikeyou.pages.dev` and `https://writelikeyou.aitytech.com` (custom
+Live at `https://pencheck.pages.dev` and `https://pencheck.aitytech.com` (custom
 domain, added via the Cloudflare API since this wrangler version's CLI has no `pages domain
 add` subcommand — the DNS `CNAME` record for a Pages custom domain isn't auto-created by that
 API call and needs `dns_records:write` scope, which this project's stored Cloudflare token

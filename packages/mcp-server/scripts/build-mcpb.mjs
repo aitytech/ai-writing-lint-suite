@@ -175,7 +175,7 @@ function smokeTest(dir) {
 async function main() {
     log("Building lint-core and mcp-server...");
     buildWorkspacePackage("@aitytech/ai-writing-lint-core");
-    buildWorkspacePackage("@aitytech/writelikeyou-mcp");
+    buildWorkspacePackage("@aitytech/pencheck-mcp");
 
     log("Cleaning previous staging dir...");
     rimraf(buildDir);
@@ -238,7 +238,7 @@ async function main() {
     log("Packing with mcpb...");
     fs.mkdirSync(outDir, { recursive: true });
     const version = JSON.parse(fs.readFileSync(path.join(mcpServerDir, "manifest.json"), "utf8")).version;
-    const outFile = path.join(outDir, `writelikeyou-${version}.mcpb`);
+    const outFile = path.join(outDir, `pencheck-${version}.mcpb`);
     run("npx", ["--yes", "@anthropic-ai/mcpb", "pack", pkgStageDir, outFile], mcpServerDir);
 
     const stat = fs.statSync(outFile);

@@ -5,7 +5,7 @@ import vi from "./locales/vi.json";
 import ja from "./locales/ja.json";
 
 /**
- * UI-chrome translations for the 3 languages WriteLikeYou lints (EN/VI/JA). Kept separate from
+ * UI-chrome translations for the 3 languages PenCheck lints (EN/VI/JA). Kept separate from
  * the lint findings themselves -- those already come pre-localized straight from each
  * language's textlint preset (the EN preset writes English messages, VI writes Vietnamese,
  * JA writes Japanese), so there is nothing to translate there. This file only covers static

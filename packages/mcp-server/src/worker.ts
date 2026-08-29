@@ -52,8 +52,8 @@ await configureSuzumeWasm(suzumeWasmModule as WebAssembly.Module);
 const handler = createMcpHandler(
     () => createServer({ checkEnglishSpelling, checkEnglishGrammarLite, checkEnglishStyleLite }),
     {
-        allowedHostnames: ["mcp.writelikeyou.aitytech.com", "localhost", "127.0.0.1"],
-        allowedOriginHostnames: ["mcp.writelikeyou.aitytech.com"]
+        allowedHostnames: ["mcp.pencheck.aitytech.com", "localhost", "127.0.0.1"],
+        allowedOriginHostnames: ["mcp.pencheck.aitytech.com"]
     }
 );
 

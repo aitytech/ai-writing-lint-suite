@@ -163,7 +163,7 @@ export function createServer(
 ): McpServer {
     const { checkEnglishGrammar, checkEnglishStyle, checkEnglishSpelling, checkEnglishGrammarLite, checkEnglishStyleLite } = options;
     const server = new McpServer(
-        { name: "writelikeyou", version: "0.1.0" },
+        { name: "pencheck", version: "0.1.0" },
         { capabilities: { tools: {} } }
     );
 

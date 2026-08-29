@@ -236,7 +236,7 @@ export function App() {
                     <span className="glyph" aria-hidden="true">
                         🖋️
                     </span>
-                    <h1>WriteLikeYou</h1>
+                    <h1>PenCheck</h1>
                     <button
                         type="button"
                         className="theme-toggle"

@@ -1,6 +1,6 @@
-# WriteLikeYou / ai-writing-lint-suite
+# PenCheck / ai-writing-lint-suite
 
-A pnpm/turborepo monorepo for **WriteLikeYou**, a rule-based (not model-based) detector for
+A pnpm/turborepo monorepo for **PenCheck**, a rule-based (not model-based) detector for
 AI-writing tells — stock phrases, hedging, structural clichés — across English, Vietnamese,
 and Japanese.
 
@@ -8,7 +8,7 @@ and Japanese.
 
 ```
 apps/
-  web/          — WriteLikeYou editor (Vite + React 19 + CodeMirror 6). Not yet deployed. See apps/web/README.md.
+  web/          — PenCheck editor (Vite + React 19 + CodeMirror 6). Live at pencheck.aitytech.com. See apps/web/README.md.
   mobile/       — React Native (Ignite/Expo CNG). Scaffolded, not yet wired to lint-core.
 packages/
   lint-core/    — shared lint engine wrapping the three presets below. See packages/lint-core/README.md.
