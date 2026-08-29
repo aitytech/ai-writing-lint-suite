@@ -10,9 +10,24 @@ Protocol tool, `lint_text`, over two transports that share one `createServer()` 
   MCP-speaking client that can't spawn a local process).
 
 `lint_text` takes `{ text, language: "en" | "vi" | "ja" | "auto" }` and returns findings with
-rule id, severity, message, the exact flagged excerpt, and a `truncated` flag once past
-`MAX_FINDINGS = 200` (never a silent drop). No text is ever sent to a third-party AI service —
-this runs a deterministic rule engine (textlint), not a model call.
+rule id, severity, message, the exact flagged excerpt, an optional `suggestions` array (a
+concrete replacement, when the source engine computed one), and a `truncated` flag once past
+`MAX_FINDINGS = 200` (never a silent drop). Two more tools: `list_rules` (what's active for a
+language) and `compare_text` (did an edit actually reduce AI-writing tells). No text is ever
+sent to a third-party AI service — every check here is a deterministic rule engine, not a
+model call.
+
+### What runs where
+
+|  | Claude Desktop (stdio) | Cloudflare Workers (hosted) |
+|---|---|---|
+| AI-writing-tell rules (EN/VI/JA) | ✅ | ✅ |
+| JA grammar (particles, register, sentence length, ...) | ✅ 11 rules | ✅ same 11 rules |
+| VI spelling (nspell + dictionary-vi) | ✅ | ✅ |
+| EN grammar/spelling (Harper) | ✅ | ❌ (see below) |
+
+Desktop and Workers run identical behavior for everything except EN grammar/spelling —
+that's the one deliberate, documented gap, not an oversight.
 
 ## Why Japanese needed its own fix
 
@@ -39,6 +54,42 @@ before `instantiateWasm` is ever consulted. The `wasm-worker` build compiles tha
 entirely (`-sENVIRONMENT=['worker']`), so `nodejs_compat` is safe to enable. See
 `@aitytech/suzume-wasm`'s own README/commit history for the full story if this ever needs
 revisiting.
+
+**Round two, same class of bug, one layer up the stack.** Adding real JA grammar checking
+(`textlint-rule-preset-japanese`, 12 rules) hit an almost-identical trap: importing the
+aggregator package (even just to read 6 specific keys off `presetJapanese.rules`) still
+statically pulls in all 12 of its sub-rule packages — including the 6 that use kuromojin —
+because a bundler's import graph includes everything a module imports, not just the object
+keys your own code later reads. Confirmed by direct repro: `wrangler dev` returned
+`"__require.resolve is not a function"` for every `ja` request, from `kuromojin`'s own
+module-scope code computing its dictionary path at load time. Fixed by importing the 6
+kuromoji-free leaf packages directly (`textlint-rule-sentence-length`, etc.) instead of the
+aggregator — confirmed fixed by re-running the same repro. One of those 6, `no-mix-dearu-desumasu`,
+turned out not to be kuromoji-free after all (`analyze-desumasu-dearu`, its dependency, calls
+`kuromojin` at module scope) and was dropped rather than shipped broken.
+
+The other 6 of `textlint-rule-preset-japanese`'s rules (max-ten, no-doubled-joshi,
+no-doubled-conjunctive-particle-ga, no-doubled-conjunction, no-double-negative-ja,
+no-dropping-the-ra) all tokenize via kuromojin upstream — reimplemented on Suzume, same rule
+IDs and Japanese messages, verified against the kuromoji originals via real
+`TextlintKernel.lintText()` runs (identical findings and ranges). One real fidelity gap:
+Suzume's dictionary doesn't distinguish が's two grammatical roles (格助詞/subject-marking vs.
+接続助詞/contrastive "but") the way kuromoji's IPADIC does — `no-doubled-conjunctive-particle-ga`
+falls back to a syntactic heuristic (re-analyzing the clause before each が, treating it as
+contrastive only when the preceding clause ends in a 終止形 predicate) that's confirmed to bias
+toward misses, never toward false-flagging subject-marking が.
+
+## VI: real spelling (nspell + dictionary-vi)
+
+Unlike EN/JA, no mature open-source Vietnamese *grammar* checker exists (researched:
+underthesea/VnCoreNLP are Python-only NLP toolkits, not spell/grammar checkers). Spelling only,
+via [nspell](https://github.com/wooorm/nspell) (pure JS, MIT) + `dictionary-vi`'s hunspell-vi
+word list — small enough (~44KB, inlined as a plain TS string constant at build time, no
+bundler-specific asset config needed anywhere) to run on **every transport**, no Desktop-only
+restriction. A custom diacritic-restoration index (built from the same word list) covers
+nspell's single biggest blind spot: typing Vietnamese without diacritics at all (e.g. "duoc"
+for "được") — nspell's generic edit-distance suggestions often never surface the correct
+diacritic-restored word on their own.
 
 ## Local development
 
@@ -125,19 +176,21 @@ live:
 | | Cold (1st request/isolate) | Warm |
 |---|---|---|
 | JA (WASM tokenizer path) | ~77ms | ~6–10ms |
-| EN/VI (regex-based, no WASM) | ~8ms | ~3–4ms |
+| EN/VI (no WASM) | ~8ms | ~3–4ms |
 
-- **Bundle**: 2.96 MB raw / **676.06 KiB gzip** (`wrangler deploy --dry-run`) — well under the
-  free-tier 3MB gzip script-size limit. (Grew from 604.92 KiB after adding
-  textlint-rule-preset-japanese's kuromoji-free grammar rules — confirmed Harper's ~8MB gzip
-  WASM did NOT leak in: `worker.js` greps for zero "harper" matches after wiring it in.)
+- **Bundle**: 2846.74 KiB raw / **661.78 KiB gzip** (`wrangler deploy --dry-run`) — well under
+  the free-tier 3MB gzip script-size limit, room to spare. Harper's ~8MB gzip WASM confirmed
+  NOT included: `worker.js` greps for zero "harper" matches (its only appearances anywhere in
+  the built output are this repo's own doc-comment strings, in the source map).
 - Cold cost is paid once per isolate (Cloudflare reuses isolates across requests), not once
   per request.
 - `configureSuzumeWasm()` only *registers* the precompiled module — it doesn't instantiate
-  Suzume eagerly, so EN/VI-only requests never pay any WASM cost at all.
+  Suzume eagerly, so EN-only requests never pay any WASM cost at all. VI's nspell dictionary
+  is plain JS data, not WASM, so it has no comparable "instantiate" cost either way.
 - These numbers are local wall-clock time through `wrangler dev`'s workerd simulation,
   including HTTP overhead on localhost — not Cloudflare's real edge CPU-time metering. Get a
-  real number after step 3 above.
+  real number after this package is actually deployed (see "Deploying to Cloudflare Workers"
+  below).
 
 ## Security
 

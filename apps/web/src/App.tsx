@@ -5,7 +5,7 @@ import { EditorView, keymap } from "@codemirror/view";
 import { EditorSelection, EditorState } from "@codemirror/state";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { markdown } from "@codemirror/lang-markdown";
-import { lintText, detectLanguage, JapaneseUnavailableError } from "@aitytech/ai-writing-lint-core";
+import { lintText, detectLanguage, checkVietnameseSpelling, JapaneseUnavailableError } from "@aitytech/ai-writing-lint-core";
 import type { Language, LintFinding, LintResult, LintSeverity } from "@aitytech/ai-writing-lint-core";
 import { lintFindingsField, lintHoverTooltip, setFindings } from "./lint/decorations";
 import { markdownLiveStyle } from "./lint/markdownTheme";
@@ -61,6 +61,14 @@ export function App() {
     const [themePref, setThemePref] = useState<ThemePref>(readStoredTheme);
     const [severityFilter, setSeverityFilter] = useState<LintSeverity | null>(null);
     const [visibleCount, setVisibleCount] = useState(FINDINGS_PAGE_SIZE);
+    // Harper (EN grammar/spelling) is a ~8MB one-time WASM download -- opt-in, not loaded for
+    // every visitor by default, to keep the app's default footprint light (see
+    // lint-core/src/harper.ts and this app's grammarToggle i18n strings for the full
+    // reasoning). checkEnglishGrammarRef caches the dynamically-imported function across
+    // toggles/lint passes within a session so it only downloads once.
+    const [grammarCheckEnabled, setGrammarCheckEnabled] = useState(false);
+    const [grammarLoading, setGrammarLoading] = useState(false);
+    const checkEnglishGrammarRef = useRef<((text: string) => Promise<LintFinding[]>) | null>(null);
 
     function toggleSeverityFilter(severity: LintSeverity) {
         setSeverityFilter((prev) => (prev === severity ? null : severity));
@@ -102,7 +110,36 @@ export function App() {
         const language = langMode === "auto" ? detectLanguage(text) : langMode;
         setIsLinting(true);
         try {
-            const next = await lintText(text, { language, ext: ".md" });
+            let next = await lintText(text, { language, ext: ".md" });
+
+            // Real spelling/grammar findings, additive to the AI-writing-tell findings
+            // above. VI (nspell) is small enough to always run; EN (Harper) is opt-in (see
+            // grammarCheckEnabled's own comment) and lazily imported so its ~8MB WASM never
+            // enters the initial bundle for visitors who never enable it.
+            let extra: LintFinding[] = [];
+            if (language === "vi") {
+                extra = await checkVietnameseSpelling(text);
+            } else if (language === "en" && grammarCheckEnabled) {
+                if (!checkEnglishGrammarRef.current) {
+                    setGrammarLoading(true);
+                    const mod = await import("@aitytech/ai-writing-lint-core/harper");
+                    checkEnglishGrammarRef.current = mod.checkEnglishGrammar;
+                    setGrammarLoading(false);
+                }
+                extra = await checkEnglishGrammarRef.current(text);
+            }
+            if (extra.length > 0) {
+                next = {
+                    ...next,
+                    findings: [...next.findings, ...extra],
+                    counts: {
+                        error: next.counts.error + extra.filter((f) => f.severity === "error").length,
+                        warning: next.counts.warning + extra.filter((f) => f.severity === "warning").length,
+                        info: next.counts.info + extra.filter((f) => f.severity === "info").length
+                    }
+                };
+            }
+
             setResult(next);
             setJaUnavailable(false);
             viewRef.current?.dispatch({ effects: setFindings.of(next.findings) });
@@ -171,6 +208,15 @@ export function App() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [languageMode]);
+
+    // Re-lint immediately when the grammar-check toggle flips, so turning it on/off updates
+    // the ledger right away rather than waiting for the next keystroke.
+    useEffect(() => {
+        if (viewRef.current) {
+            void runLint(viewRef.current.state.doc.toString(), languageModeRef.current);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [grammarCheckEnabled]);
 
     const counts = result?.counts ?? { error: 0, warning: 0, info: 0 };
     const total = counts.error + counts.warning + counts.info;
@@ -248,6 +294,17 @@ export function App() {
                         </div>
 
                         {jaUnavailable && <p className="ja-gap-note">{t("jaGapNote")}</p>}
+
+                        {effectiveLanguage === "en" && (
+                            <label className="grammar-toggle" title={t("grammarToggle.hint")}>
+                                <input
+                                    type="checkbox"
+                                    checked={grammarCheckEnabled}
+                                    onChange={(e) => setGrammarCheckEnabled(e.target.checked)}
+                                />
+                                {grammarLoading ? t("grammarToggle.loading") : t("grammarToggle.label")}
+                            </label>
+                        )}
 
                         <div className="counts" role="group" aria-label={t("ledger.filterLabel")}>
                             {SEVERITIES.map((sev) => (

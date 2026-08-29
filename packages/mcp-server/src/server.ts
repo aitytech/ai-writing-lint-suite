@@ -1,6 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import * as z from "zod/v4";
-import { lintText, detectLanguage, listRules, JapaneseUnavailableError } from "@aitytech/ai-writing-lint-core";
+import {
+    lintText,
+    detectLanguage,
+    listRules,
+    checkVietnameseSpelling,
+    JapaneseUnavailableError
+} from "@aitytech/ai-writing-lint-core";
 import type { LintFinding, LintResult, LintSeverity } from "@aitytech/ai-writing-lint-core";
 
 /**
@@ -47,19 +53,23 @@ const LintOutput = z.object({
 });
 
 // Runs identically on both transports (stdio.ts for Claude Desktop, worker.ts for the
-// hosted/remote deployment) for the AI-writing-tell rules and Suzume-based JA grammar checks.
-// The one deliberate exception is real EN grammar/spelling checking (Harper) -- Claude
-// Desktop only, see createServer()'s doc comment and lint-core/src/harper.ts for why.
+// hosted/remote deployment) for the AI-writing-tell rules, VI spell-checking, and
+// Suzume-based JA grammar checks. The one deliberate exception is real EN grammar/spelling
+// checking (Harper) -- Claude Desktop only, see createServer()'s doc comment and
+// lint-core/src/harper.ts for why.
 const TOOL_DESCRIPTION =
     "Detects AI-writing tells (stock phrases, hedging, AI self-disclosure, structural " +
     "cliches) in English, Vietnamese, or Japanese text using a rule-based linter, not " +
-    "another LLM's impression. On English text, also runs real grammar/spelling checking " +
-    "(where available) on top of the AI-tell rules. Call this before finalizing any draft " +
-    "the user will publish. Each finding names the exact rule violated and the exact text " +
-    "span. When fixing an AI-writing-tell finding, rewrite the flagged span's meaning " +
-    "substantially: light editing rarely changes how machine-typed a passage reads -- " +
-    "grammar/spelling findings, in contrast, are usually fine to fix with the exact " +
-    "correction. This tool runs deterministic rule engines, not an AI model -- no " +
+    "another LLM's impression. Also runs real grammar/spelling checking on top of the " +
+    "AI-tell rules: full grammar+spelling on English (where available), spelling only on " +
+    "Vietnamese (no mature open-source Vietnamese grammar checker exists), and grammar " +
+    "checks on Japanese (particle repetition, mixed register, sentence length, ...). Call " +
+    "this before finalizing any draft the user will publish. Each finding names the exact " +
+    "rule violated and the exact text span. When fixing an AI-writing-tell finding, rewrite " +
+    "the flagged span's meaning substantially: light editing rarely changes how " +
+    "machine-typed a passage reads -- grammar/spelling findings, in contrast, are usually " +
+    "fine to fix with the exact correction (see each finding's `suggestions`, when " +
+    "present). This tool runs deterministic rule engines, not an AI model -- no " +
     "third-party AI service sees this text, and nothing is logged or stored.";
 
 /**
@@ -71,6 +81,19 @@ const TOOL_DESCRIPTION =
  * this checker offered to begin with.
  */
 export type CheckEnglishGrammar = (text: string) => Promise<LintFinding[]>;
+
+function mergeFindings(result: LintResult, extra: LintFinding[]): LintResult {
+    if (extra.length === 0) return result;
+    return {
+        ...result,
+        findings: [...result.findings, ...extra],
+        counts: {
+            error: result.counts.error + extra.filter((f) => f.severity === "error").length,
+            warning: result.counts.warning + extra.filter((f) => f.severity === "warning").length,
+            info: result.counts.info + extra.filter((f) => f.severity === "info").length
+        }
+    };
+}
 
 /**
  * Shared factory for both transports -- the tool registration lives in exactly one place so
@@ -125,21 +148,16 @@ export function createServer(options: { checkEnglishGrammar?: CheckEnglishGramma
                 throw error;
             }
 
-            // Real grammar/spelling findings (Harper), additive to the AI-writing-tell
-            // findings above -- only offered where injected (Claude Desktop; see this
-            // function's doc comment). Merged before truncation/counting so MAX_FINDINGS and
-            // the summary line both reflect the combined total, not two separate numbers.
+            // Real grammar/spelling findings, additive to the AI-writing-tell findings above.
+            // EN (Harper) is only offered where injected (Claude Desktop; see this function's
+            // doc comment) -- VI (nspell) runs on every transport, it's cheap enough not to
+            // need the same restriction (see lint-core/src/vietnamese-spelling.ts). Merged
+            // before truncation/counting so MAX_FINDINGS and the summary line both reflect the
+            // combined total, not two separate numbers.
             if (resolvedLanguage === "en" && checkEnglishGrammar) {
-                const grammarFindings = await checkEnglishGrammar(text);
-                result = {
-                    ...result,
-                    findings: [...result.findings, ...grammarFindings],
-                    counts: {
-                        error: result.counts.error + grammarFindings.filter((f) => f.severity === "error").length,
-                        warning: result.counts.warning + grammarFindings.filter((f) => f.severity === "warning").length,
-                        info: result.counts.info + grammarFindings.filter((f) => f.severity === "info").length
-                    }
-                };
+                result = mergeFindings(result, await checkEnglishGrammar(text));
+            } else if (resolvedLanguage === "vi") {
+                result = mergeFindings(result, await checkVietnameseSpelling(text));
             }
 
             const totalFindings = result.findings.length;

@@ -174,6 +174,12 @@ export async function lintText(
     return { language, findings, counts };
 }
 
+// Real Vietnamese spell-checking (nspell + dictionary-vi) -- unlike checkEnglishGrammar
+// (Harper), safe to export from the main entrypoint: pure JS, ~44KB of inlined dictionary
+// data, no WASM, no bundle-size concern on any transport including Cloudflare Workers. See
+// vietnamese-spelling.ts for the full story (including why no VI grammar checker exists).
+export { checkVietnameseSpelling } from "./vietnamese-spelling.js";
+
 export type RuleInfo = {
     ruleId: string;
     /** "off" when the preset's own rulesConfig explicitly disables this rule (rare -- most

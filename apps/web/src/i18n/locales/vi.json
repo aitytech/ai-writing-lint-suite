@@ -33,7 +33,12 @@
     "warning": "cảnh báo",
     "info": "gợi ý"
   },
-  "jaGapNote": "Kiểm tra tiếng Nhật chưa tải được trên bản trình duyệt này (bộ tải từ điển kuromoji phụ thuộc gói không còn bảo trì). Đây là hạn chế đã biết, không phải bị bỏ qua âm thầm — EN/VI không bị ảnh hưởng.",
+  "jaGapNote": "Kiểm tra tiếng Nhật gặp lỗi bất thường trong phiên trình duyệt này. Đây không phải trạng thái bình thường — thử tải lại trang.",
+  "grammarToggle": {
+    "label": "Ngữ pháp & chính tả",
+    "hint": "Kiểm tra ngữ pháp/chính tả tiếng Anh thật (Harper), cộng thêm vào các rule AI-tell ở trên. Mặc định tắt — vì cần tải ~8MB một lần, nên để người dùng chủ động bật thay vì tự động tải cho tất cả mọi người.",
+    "loading": "Đang tải bộ kiểm tra ngữ pháp (~8MB, một lần mỗi phiên)…"
+  },
   "footer": {
     "privacy": "Chạy hoàn toàn trong tab này — bản nháp không rời khỏi trình duyệt của bạn."
   }

@@ -35,7 +35,12 @@
     "warning": "warning",
     "info": "info"
   },
-  "jaGapNote": "Japanese linting can't load in this browser build yet (kuromoji's dictionary loader depends on an unmaintained package). Tracked as a known gap, not silently skipped — EN/VI aren't affected.",
+  "jaGapNote": "Japanese linting hit an unexpected error in this browser session. This isn't the normal path — try reloading.",
+  "grammarToggle": {
+    "label": "Grammar & spelling",
+    "hint": "Real English grammar/spelling checking (Harper) on top of the AI-tell rules above. Off by default — it's a ~8MB one-time download, so this stays opt-in rather than loading for everyone automatically.",
+    "loading": "Loading grammar checker (~8MB, once per session)…"
+  },
   "footer": {
     "privacy": "Runs entirely in this tab — no draft text leaves your browser."
   }

@@ -17,6 +17,7 @@
     }
   },
   "scripts": {
+    "prebuild": "node scripts/generate-vi-dictionary.mjs",
     "build": "tsc -p .",
     "dev": "tsc -p . --watch"
   },
@@ -28,9 +29,12 @@
     "@textlint/kernel": "15.8.0",
     "@textlint/textlint-plugin-markdown": "15.8.0",
     "@textlint/textlint-plugin-text": "15.8.0",
-    "harper.js": "2.7.0"
+    "dictionary-vi": "3.0.0",
+    "harper.js": "2.7.0",
+    "nspell": "2.1.5"
   },
   "devDependencies": {
+    "@types/nspell": "2.1.6",
     "typescript": "7.0.2"
   }
 }
