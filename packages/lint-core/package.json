@@ -23,6 +23,7 @@
   "scripts": {
     "prebuild": "node scripts/generate-vi-dictionary.mjs",
     "build": "tsc -p .",
+    "postbuild": "node ../../scripts/obfuscate-dist.mjs dist",
     "dev": "tsc -p . --watch"
   },
   "dependencies": {

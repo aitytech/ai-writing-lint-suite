@@ -43,3 +43,4 @@ _archive/
 
 # Added by ggshield
 .cache_ggshield
+.gstack/

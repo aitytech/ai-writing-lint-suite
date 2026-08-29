@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "postbuild": "node ../../scripts/obfuscate-dist.mjs dist --light",
     "lint": "tsc --noEmit",
     "preview": "vite preview"
   },

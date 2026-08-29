@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p .",
+    "postbuild": "node ../../scripts/obfuscate-dist.mjs dist",
     "start:stdio": "node dist/stdio.js",
     "prewasm": "node scripts/copy-suzume-wasm.mjs",
     "dev:http": "node scripts/copy-suzume-wasm.mjs && wrangler dev",

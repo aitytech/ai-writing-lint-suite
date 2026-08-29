@@ -9,6 +9,7 @@
     "test": "turbo run test"
   },
   "devDependencies": {
+    "javascript-obfuscator": "^5.6.0",
     "turbo": "2.10.12"
   },
   "packageManager": "pnpm@11.20.0",
