@@ -22,7 +22,7 @@ model call.
 |  | Claude Desktop (stdio) | Cloudflare Workers (hosted) |
 |---|---|---|
 | AI-writing-tell rules (EN/VI/JA) | ✅ | ✅ |
-| JA grammar (particles, register, sentence length, ...) | ✅ 11 rules | ✅ same 11 rules |
+| JA grammar (particles, register, sentence length, ...) | ✅ 12 rules | ✅ same 12 rules |
 | VI spelling (nspell + dictionary-vi) | ✅ | ✅ |
 | EN grammar/spelling (Harper) | ✅ | ❌ (see below) |
 
@@ -57,27 +57,37 @@ revisiting.
 
 **Round two, same class of bug, one layer up the stack.** Adding real JA grammar checking
 (`textlint-rule-preset-japanese`, 12 rules) hit an almost-identical trap: importing the
-aggregator package (even just to read 6 specific keys off `presetJapanese.rules`) still
-statically pulls in all 12 of its sub-rule packages — including the 6 that use kuromojin —
+aggregator package (even just to read 5 specific keys off `presetJapanese.rules`) still
+statically pulls in all 12 of its sub-rule packages — including the 7 that use kuromojin —
 because a bundler's import graph includes everything a module imports, not just the object
 keys your own code later reads. Confirmed by direct repro: `wrangler dev` returned
 `"__require.resolve is not a function"` for every `ja` request, from `kuromojin`'s own
-module-scope code computing its dictionary path at load time. Fixed by importing the 6
+module-scope code computing its dictionary path at load time. Fixed by importing the 5
 kuromoji-free leaf packages directly (`textlint-rule-sentence-length`, etc.) instead of the
-aggregator — confirmed fixed by re-running the same repro. One of those 6, `no-mix-dearu-desumasu`,
-turned out not to be kuromoji-free after all (`analyze-desumasu-dearu`, its dependency, calls
-`kuromojin` at module scope) and was dropped rather than shipped broken.
+aggregator — confirmed fixed by re-running the same repro.
 
-The other 6 of `textlint-rule-preset-japanese`'s rules (max-ten, no-doubled-joshi,
+The other 7 of `textlint-rule-preset-japanese`'s rules (max-ten, no-doubled-joshi,
 no-doubled-conjunctive-particle-ga, no-doubled-conjunction, no-double-negative-ja,
-no-dropping-the-ra) all tokenize via kuromojin upstream — reimplemented on Suzume, same rule
-IDs and Japanese messages, verified against the kuromoji originals via real
-`TextlintKernel.lintText()` runs (identical findings and ranges). One real fidelity gap:
-Suzume's dictionary doesn't distinguish が's two grammatical roles (格助詞/subject-marking vs.
-接続助詞/contrastive "but") the way kuromoji's IPADIC does — `no-doubled-conjunctive-particle-ga`
-falls back to a syntactic heuristic (re-analyzing the clause before each が, treating it as
-contrastive only when the preceding clause ends in a 終止形 predicate) that's confirmed to bias
-toward misses, never toward false-flagging subject-marking が.
+no-dropping-the-ra, no-mix-dearu-desumasu) all tokenize via kuromojin upstream — every one
+reimplemented on Suzume, same rule IDs and Japanese messages. None dropped: `no-mix-dearu-desumasu`
+looked kuromoji-free from its own package.json but wasn't (`analyze-desumasu-dearu`, its
+dependency, calls `kuromojin` at module scope) — ported to Suzume like the rest rather than
+shipped broken or left out. Verified against the kuromoji originals via real
+`TextlintKernel.lintText()` runs (identical findings and ranges) where a kuromoji original
+existed to compare against. Two real fidelity gaps, both documented in the affected rule's own
+file:
+- `no-doubled-conjunctive-particle-ga`: Suzume's dictionary doesn't distinguish が's two
+  grammatical roles (格助詞/subject-marking vs. 接続助詞/contrastive "but") the way kuromoji's
+  IPADIC does — falls back to a syntactic heuristic (re-analyzing the clause before each が,
+  treating it as contrastive only when the preceding clause ends in a 終止形 predicate),
+  confirmed to bias toward misses, never toward false-flagging subject-marking が.
+- `no-mix-dearu-desumasu`: Suzume tags the attributive form な (連体修飾, e.g. "不明な点")
+  identically to sentence-final だ on every structured field it exposes — worked around with a
+  syntactic heuristic (な immediately followed by a noun is attributive, excluded). Also
+  diverges from upstream by design: the real upstream package, installed and tested directly,
+  turns out to never count standalone sentence-final だ at all (only the である compound) —
+  judged that as an upstream limitation rather than something to preserve, so this port counts
+  standalone だ too.
 
 ## VI: real spelling (nspell + dictionary-vi)
 

@@ -38,12 +38,15 @@ Dependency versions are pinned exact (no `^`/`~`) across this workspace by polic
 
 ## Why the preset repos are forks, not upstream packages
 
-- **EN/VI**: AITYTECH-authored from the start (`textlint-rule-preset-ai-writing-{en,vi}`), 5
-  AI-writing-tell rules ported to JA.
-- **JA**: forked from `textlint-ja/textlint-rule-preset-ai-writing` (upstream, 5 rules) plus
-  AITYTECH's 5 AI-writing-tell rules plus 11 real Japanese grammar/style rules from
-  `textlint-rule-preset-japanese` (6 reimplemented on Suzume so they run on Cloudflare Workers,
-  5 used as-is). See `packages/mcp-server/README.md` for the full kuromoji→Suzume story.
+- **EN/VI**: AITYTECH-authored from the start (`textlint-rule-preset-ai-writing-{en,vi}`), 12
+  (EN) / 11 (VI) AI-writing-tell rules, all 12 ported to JA (7 needed real Japanese-specific
+  linguistic adaptation — different punctuation, no word-space tokenization, thresholds
+  re-measured against a real Japanese corpus, not copied from English).
+- **JA**: forked from `textlint-ja/textlint-rule-preset-ai-writing` (upstream, 5 rules), plus
+  the 7 ported EN/VI rules, plus all 12 rules from `textlint-rule-preset-japanese` for real
+  Japanese grammar/style checking (7 reimplemented on Suzume so they run on Cloudflare Workers,
+  5 used as-is) — 24 rules total, none dropped or left kuromoji-dependent. See
+  `packages/mcp-server/README.md` for the full kuromoji→Suzume story.
 - **Suzume**: forked from `libraz/suzume` and patched to accept a precompiled WASM module at
   init (`instantiateWasm`), plus a Workers-only build variant — both needed to make Japanese
   linting actually work on Cloudflare Workers.
@@ -58,7 +61,7 @@ grammar/spelling checks:
   well past Workers' free-tier 3MB budget.
 - **VI**: [nspell](https://github.com/wooorm/nspell) + `dictionary-vi` — spelling only (no
   mature open-source Vietnamese grammar checker exists), runs everywhere (tiny, pure JS).
-- **JA**: the 11 grammar rules mentioned above, run everywhere.
+- **JA**: the 12 grammar/style rules mentioned above, run everywhere.
 
 ## Status
 
