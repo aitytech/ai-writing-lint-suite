@@ -23,6 +23,7 @@ model call.
 |---|---|---|
 | AI-writing-tell rules (EN/VI/JA) | ✅ | ✅ |
 | JA grammar (particles, register, sentence length, ...) | ✅ 12 rules | ✅ same 12 rules |
+| JA proofreading / 校正 (表記統一, 用字用語統一, 誤用) | ✅ 11 rules | ✅ same 11 rules |
 | VI spelling (nspell + dictionary-vi) | ✅ | ✅ |
 | EN grammar/spelling (Harper) | ✅ | ❌ (see below) |
 | EN style guide (Vale + write-good) | ✅ | ❌ (see below) |
@@ -91,6 +92,34 @@ file:
   turns out to never count standalone sentence-final だ at all (only the である compound) —
   judged that as an upstream limitation rather than something to preserve, so this port counts
   standalone だ too.
+
+**Round three, same class of bug, different aggregator.** Adding the 11 JA proofreading rules
+(校正 / 表記統一 — the concern professional editors and translation agencies have, distinct from
+both AI-tell detection and grammar correctness) meant reaching into
+`textlint-rule-preset-ja-technical-writing`, which has the same shape of problem:
+`npm view textlint-rule-preset-ja-technical-writing dependencies` reaches `kuromojin` through
+5 of its 24 sub-rules, so the aggregator is never imported — only individual leaf packages are,
+and each one was re-checked with `npm view <pkg> dependencies` first. Six ship as-is
+(`ja-no-mixed-period`, `ja-unnatural-alphabet`, `max-comma`, `max-kanji-continuous-len`,
+`no-exclamation-question-mark`, `no-hankaku-kana`); four tokenize and are reimplemented on
+Suzume (`ja-no-abusage`, `ja-no-redundant-expression`, `ja-no-successive-word`,
+`ja-no-weak-phrase`). The eleventh is `prh`, a regex terminology-unification engine, driven by
+a vendored MIT WEB+DB PRESS dictionary.
+
+One Workers-specific wrinkle worth recording, because it is the same "works on Node, dies on
+Workers" shape as the kuromoji story: `textlint-rule-prh`'s usual `rulePaths` option ends in an
+`fs.readFileSync()` of a `.yml` that Wrangler does not bundle and a Worker has no filesystem to
+read. Its `ruleContents` option takes the YAML as a string and only ever reaches js-yaml, so
+the JA preset compiles its dictionaries into a TS module and passes them that way. Confirmed
+working on a real local Workers instance, not assumed.
+
+Per-rule Suzume fidelity gaps for these four are documented in each rule's own file in the JA
+preset; the two structural ones are that Suzume has no 名詞-サ変接続 subtag (so
+`ja-no-redundant-expression`'s "[サ変名詞]を行う" patterns use an all-kanji-noun heuristic that
+misses rather than over-reports) and that Suzume's unknown-word merging both splits some
+reduplicated adverbs and merges some genuine repetitions (so `ja-no-successive-word` re-analyzes
+candidates to avoid false positives, and knowingly misses kana-only repetitions rather than
+guess).
 
 ## VI: real spelling (nspell + dictionary-vi)
 

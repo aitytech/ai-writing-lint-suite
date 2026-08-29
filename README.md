@@ -45,7 +45,11 @@ Dependency versions are pinned exact (no `^`/`~`) across this workspace by polic
 - **JA**: forked from `textlint-ja/textlint-rule-preset-ai-writing` (upstream, 5 rules), plus
   the 7 ported EN/VI rules, plus all 12 rules from `textlint-rule-preset-japanese` for real
   Japanese grammar/style checking (7 reimplemented on Suzume so they run on Cloudflare Workers,
-  5 used as-is) — 24 rules total, none dropped or left kuromoji-dependent. See
+  5 used as-is), plus 11 professional proofreading rules (校正 / 表記統一 — notation and
+  terminology consistency, the concern editors and translation agencies actually have: a
+  vendored MIT WEB+DB PRESS terminology dictionary driving `prh`, plus 10 rules from
+  `textlint-rule-preset-ja-technical-writing`, 4 of them likewise reimplemented on Suzume) —
+  35 rules total, none dropped or left kuromoji-dependent. See
   `packages/mcp-server/README.md` for the full kuromoji→Suzume story.
 - **Suzume**: forked from `libraz/suzume` and patched to accept a precompiled WASM module at
   init (`instantiateWasm`), plus a Workers-only build variant — both needed to make Japanese
