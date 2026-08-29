@@ -126,6 +126,74 @@ function patchHarperWasmPathBug(lintCoreStageDir) {
     log(`patched ${patched} file(s) in harper.js/dist (URL.pathname -> URL fs.readFile bug)`);
 }
 
+/**
+ * Removes commented, human-readable TypeScript source (and test files) from this monorepo's
+ * own PRIVATE git-dependency packages (the @aitytech-scoped EN/VI/JA textlint presets) before
+ * packing -- a real information-disclosure bug caught by literally unzipping a built .mcpb and
+ * reading it, not theorized. `npm install` on a `github:owner/repo#sha` dependency installs the
+ * ENTIRE repository checkout into node_modules, not just the package's registry-publish
+ * "files" allowlist (that filtering is an `npm publish`-time step that never runs for git
+ * dependencies) -- so alongside each preset's compiled `lib/` output, node_modules also ends up
+ * containing the full, fully-commented `src/*.ts` this monorepo wrote (sourcing citations,
+ * measured false-positive rates, internal design rationale -- everything). Confirmed these
+ * three repos are genuinely private (an unauthenticated `curl` to each returns 404, unlike the
+ * public main monorepo, which returns 200) before treating this as a real leak rather than
+ * redundant exposure of already-public code.
+ *
+ * Scoped only to `@aitytech/*` packages, not a blanket "strip every src/ in node_modules":
+ * every other dependency here is a public npm-registry package (nspell, retext, write-good,
+ * harper.js, ...) whose source is not sensitive even if it happened to be present, and a
+ * blanket strip risks deleting a `src/` some third-party package's own runtime code actually
+ * needs to resolve at import time. `@aitytech/suzume` is intentionally left untouched by this
+ * function even though it matches the scope glob -- checked directly, it ships prebuilt `dist/`
+ * only (its own README explains why: the WASM binary is committed prebuilt), no `src/` exists
+ * there to strip.
+ *
+ * This bug is specific to the .mcpb packaging path. The Cloudflare Workers deployment
+ * (worker.ts, bundled by esbuild via `wrangler deploy`) and the web app (bundled by Vite) are
+ * NOT affected -- both bundlers tree-shake from actual import graphs, so an unreferenced
+ * `src/*.ts` file sitting in node_modules never gets pulled into either of those builds.
+ * Confirmed this function is necessary (not just careful) by unzipping a real built .mcpb
+ * before this fix existed and finding 62 full source files with complete doc comments,
+ * including the ones you're reading right now.
+ */
+function stripPrivateSourceFromStagedPackages(lintCoreStageDir) {
+    const scopeDir = path.join(lintCoreStageDir, "node_modules", "@aitytech");
+    if (!fs.existsSync(scopeDir)) {
+        throw new Error(`expected ${scopeDir} to exist (this monorepo's own @aitytech-scoped deps) -- did the dependency layout change?`);
+    }
+    let removedBytes = 0;
+    let removedDirs = 0;
+    for (const pkgName of fs.readdirSync(scopeDir)) {
+        const pkgDir = path.join(scopeDir, pkgName);
+        if (!fs.statSync(pkgDir).isDirectory()) continue;
+        for (const sub of ["src", "test", "tests"]) {
+            const target = path.join(pkgDir, sub);
+            if (!fs.existsSync(target)) continue;
+            removedBytes += dirSizeBytes(target);
+            fs.rmSync(target, { recursive: true, force: true });
+            removedDirs++;
+            log(`removed ${pkgName}/${sub} (private source, not needed at runtime -- lib/ is what's actually imported)`);
+        }
+    }
+    if (removedDirs === 0) {
+        throw new Error(
+            `expected to remove at least one src/ or test/ directory from @aitytech-scoped packages in ${scopeDir} and removed none -- either the presets stopped shipping source in git installs (unlikely, verify before trusting) or the dependency layout changed. Don't skip silently -- this function existing IS the fix for a real, already-shipped information leak.`
+        );
+    }
+    log(`stripped ${removedDirs} private source dir(s), ${(removedBytes / 1024).toFixed(1)}KB`);
+}
+
+function dirSizeBytes(dir) {
+    let total = 0;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) total += dirSizeBytes(full);
+        else total += fs.statSync(full).size;
+    }
+    return total;
+}
+
 /** Smoke-test the staged, pre-zip package by actually spawning it and sending a real MCP
  * request over stdin -- the same verification standard the rest of this monorepo holds every
  * rule/engine change to (real execution, never "should work"). */
@@ -199,6 +267,9 @@ async function main() {
 
     log("Patching a real harper.js path-decoding bug (see this function's own comment)...");
     patchHarperWasmPathBug(lintCoreStageDir);
+
+    log("Stripping private source from staged @aitytech packages (see this function's own comment)...");
+    stripPrivateSourceFromStagedPackages(lintCoreStageDir);
 
     log("Staging mcp-server (dropping agents/@aitytech/suzume -- see this file's header comment)...");
     copyRecursive(path.join(mcpServerDir, "dist"), path.join(pkgStageDir, "dist"));

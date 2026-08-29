@@ -170,6 +170,15 @@ export function createServer(
     server.registerTool(
         "lint_text",
         {
+            // MCP's `title` field is the human-readable display name a client's UI shows
+            // instead of the raw `name` identifier -- without it, clients that don't have
+            // their own friendlier label fall back to a mechanical transform of `name`
+            // (e.g. ChatGPT showed literal "Lint text" / "List rules", underscore-to-space
+            // plus a capital first letter, confirmed by direct observation of its own UI).
+            // `name` itself stays snake_case regardless -- it's the wire identifier every
+            // client actually calls, changing it would be a breaking change for anyone who's
+            // already connected.
+            title: "Check Writing",
             description: TOOL_DESCRIPTION,
             inputSchema: LintInput,
             outputSchema: LintOutput
@@ -268,6 +277,7 @@ export function createServer(
     server.registerTool(
         "list_rules",
         {
+            title: "List Rules",
             description:
                 "Lists the rules lint_text can flag for a given language: rule id, severity, " +
                 "and configured options. Rule ids are self-descriptive by convention " +
@@ -308,6 +318,7 @@ export function createServer(
     server.registerTool(
         "compare_text",
         {
+            title: "Compare Drafts",
             description:
                 "Lints two versions of the same draft (before/after an edit) and reports " +
                 "whether the edit actually reduced AI-writing tells -- not just whether the " +
