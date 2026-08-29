@@ -251,11 +251,11 @@ importers:
         specifier: github:aitytech/textlint-rule-preset-ai-writing-en#b1a3c5b6a06c22af6aba604b2139391113188087
         version: git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-en.git#b1a3c5b6a06c22af6aba604b2139391113188087
       '@aitytech/textlint-rule-preset-ai-writing-ja':
-        specifier: github:aitytech/textlint-rule-preset-ai-writing-ja#8b00a7ae30067931b34ba9f17c7d08710f68572e
-        version: git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-ja.git#8b00a7ae30067931b34ba9f17c7d08710f68572e(supports-color@10.2.2)
+        specifier: github:aitytech/textlint-rule-preset-ai-writing-ja#3a7e5b7cd25fee204dd4fc1bc557a80998206b78
+        version: git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-ja.git#3a7e5b7cd25fee204dd4fc1bc557a80998206b78(supports-color@10.2.2)
       '@aitytech/textlint-rule-preset-ai-writing-vi':
-        specifier: github:aitytech/textlint-rule-preset-ai-writing-vi#bb0f17b2d6ac3b72e1fe283ab2a5aec5d1ce8632
-        version: git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#bb0f17b2d6ac3b72e1fe283ab2a5aec5d1ce8632
+        specifier: github:aitytech/textlint-rule-preset-ai-writing-vi#886851d40705b005e795d2da773f057379e63e05
+        version: git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#886851d40705b005e795d2da773f057379e63e05
       '@textlint/kernel':
         specifier: 15.8.0
         version: 15.8.0(supports-color@10.2.2)
@@ -327,13 +327,13 @@ packages:
     resolution: {commit: b1a3c5b6a06c22af6aba604b2139391113188087, repo: git@github.com:aitytech/textlint-rule-preset-ai-writing-en.git, type: git}
     version: 0.5.0
 
-  '@aitytech/textlint-rule-preset-ai-writing-ja@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-ja.git#8b00a7ae30067931b34ba9f17c7d08710f68572e':
-    resolution: {commit: 8b00a7ae30067931b34ba9f17c7d08710f68572e, repo: git@github.com:aitytech/textlint-rule-preset-ai-writing-ja.git, type: git}
+  '@aitytech/textlint-rule-preset-ai-writing-ja@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-ja.git#3a7e5b7cd25fee204dd4fc1bc557a80998206b78':
+    resolution: {commit: 3a7e5b7cd25fee204dd4fc1bc557a80998206b78, repo: git@github.com:aitytech/textlint-rule-preset-ai-writing-ja.git, type: git}
     version: 1.14.0
 
-  '@aitytech/textlint-rule-preset-ai-writing-vi@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#bb0f17b2d6ac3b72e1fe283ab2a5aec5d1ce8632':
-    resolution: {commit: bb0f17b2d6ac3b72e1fe283ab2a5aec5d1ce8632, repo: git@github.com:aitytech/textlint-rule-preset-ai-writing-vi.git, type: git}
-    version: 0.5.0
+  '@aitytech/textlint-rule-preset-ai-writing-vi@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#886851d40705b005e795d2da773f057379e63e05':
+    resolution: {commit: 886851d40705b005e795d2da773f057379e63e05, repo: git@github.com:aitytech/textlint-rule-preset-ai-writing-vi.git, type: git}
+    version: 0.6.0
 
   '@babel/code-frame@7.10.4':
     resolution: {integrity: sha512-vG6SvB6oYEhvgisZNFRmRCUkLz11c7rp+tbNTynGqc6mS1d5ATd/sGyV6W0KZZnXRKMTzZDRgQT3Ou9jhpAfUg==}
@@ -3491,9 +3491,6 @@ packages:
     resolution: {integrity: sha512-QrWXB+ZQSVPmIWIhtEO9H+gwHaMGYiF5ChvoJ+K9ZGHG/sVsa6yiesAD1GC/x46sET00Xlwo1u49RVVVzvcSkw==}
     engines: {node: '>= 10'}
 
-  commandpost@1.4.0:
-    resolution: {integrity: sha512-aE2Y4MTFJ870NuB/+2z1cXBhSBBzRydVVjzhFC4gtenEhpnj15yu0qptWGJsO9YGrcPZ3ezX8AWb1VA391MKpQ==}
-
   compressible@2.0.18:
     resolution: {integrity: sha512-AF3r7P5dWxL8MxyITRMlORQNaOA2IkAFaTr4k7BUumjPtRpGDTZpl0Pb1XCO6JeDCBdp126Cgs9sMxqSjgYyRg==}
     engines: {node: '>= 0.6'}
@@ -3702,8 +3699,8 @@ packages:
     resolution: {integrity: sha512-EjePK1srD3P08o2j4f0ExnylqRs5B9tJjcp9t1krH2qRi8CCdsYfwe9JgSLurFBWwq4uOlipzfk5fHNvwFKr8Q==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
 
-  diff@4.0.4:
-    resolution: {integrity: sha512-X07nttJQkwkfKfvTPG/KSnE2OMdcUCao6+eXF3wmnIQRn2aPAHH3VxDbDOdegkd6JbPsXqShpvEOHfAT+nCNwQ==}
+  diff@9.0.0:
+    resolution: {integrity: sha512-svtcdpS8CgJyqAjEQIXdb3OjhFVVYjzGAPO8WGCmRbrml64SPw/jJD4GoE98aR7r25A0XcgrK3F02yw9R/vhQw==}
     engines: {node: '>=0.3.1'}
 
   dnssd-advertise@1.1.6:
@@ -5865,8 +5862,9 @@ packages:
     resolution: {integrity: sha512-K6KiKMHTL4jjX4u3Kir2EW07nRfcqVTXIImx50wbjHQTcZPgg+gjVeNTIT3l3L1Rd4UefxfogquC9J37SoFyyw==}
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
 
-  prh@5.4.4:
-    resolution: {integrity: sha512-UATF+R/2H8owxwPvF12Knihu9aYGTuZttGHrEEq5NBWz38mREh23+WvCVKX3fhnIZIMV7ye6E1fnqAl+V6WYEw==}
+  prh@6.0.6:
+    resolution: {integrity: sha512-WJ7aaIa37vwHYg5sa1VaqykJiO/6AEkbQOTEnp/52XDXnbMcBPY1++oeV5trjFrLbiTqJY5nO5BaR/MR5ioJHw==}
+    engines: {node: '>=22'}
     hasBin: true
 
   proc-log@4.2.0:
@@ -6687,9 +6685,6 @@ packages:
   textlint-rule-no-zero-width-spaces@1.0.1:
     resolution: {integrity: sha512-AkxpzBILGB4YsXddzHx2xqpXmqMv5Yd+PQm4anUV+ADSJuwLP1Jd6yHf/LOtu9j3ps8K3XM9vQrXRK73z0bU3A==}
 
-  textlint-rule-prh@6.1.0:
-    resolution: {integrity: sha512-KrchADHw1/LZ/tAQ2XwL/XdUhunKCvlNmwgp+6hdyzuWX7uojOkDdJWWV0KAN4XWsK6Te5w/SZcYwQ7X6i3B0A==}
-
   textlint-rule-sentence-length@5.2.1:
     resolution: {integrity: sha512-z4HylabPy+e1I5DcuzDmcT65hvyytTlsD+uM49JkCBTSJBWqzQQ3kCGk4b1cF+kANS2HifWNnpTG/jfSOeavIw==}
 
@@ -7263,11 +7258,12 @@ snapshots:
       '@textlint/regexp-string-matcher': 2.0.2
       '@textlint/types': 15.8.0
 
-  '@aitytech/textlint-rule-preset-ai-writing-ja@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-ja.git#8b00a7ae30067931b34ba9f17c7d08710f68572e(supports-color@10.2.2)':
+  '@aitytech/textlint-rule-preset-ai-writing-ja@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-ja.git#3a7e5b7cd25fee204dd4fc1bc557a80998206b78(supports-color@10.2.2)':
     dependencies:
       '@aitytech/suzume': https://codeload.github.com/aitytech/suzume-wasm/tar.gz/3304cb9ad51b21a835a292ab7efc405df15ae00b
       '@textlint-rule/textlint-rule-no-invalid-control-character': 3.0.0
       '@textlint/regexp-string-matcher': 2.0.2
+      prh: 6.0.6
       sentence-splitter: 5.0.1
       textlint-rule-helper: 2.5.0
       textlint-rule-ja-no-mixed-period: 3.0.2
@@ -7279,16 +7275,16 @@ snapshots:
       textlint-rule-no-kangxi-radicals: 0.2.2
       textlint-rule-no-nfd: 2.0.2
       textlint-rule-no-zero-width-spaces: 1.0.1
-      textlint-rule-prh: 6.1.0
       textlint-rule-sentence-length: 5.2.1
       textlint-util-to-string: 3.3.4
     transitivePeerDependencies:
       - supports-color
 
-  '@aitytech/textlint-rule-preset-ai-writing-vi@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#bb0f17b2d6ac3b72e1fe283ab2a5aec5d1ce8632':
+  '@aitytech/textlint-rule-preset-ai-writing-vi@git+ssh://git@github.com/aitytech/textlint-rule-preset-ai-writing-vi.git#886851d40705b005e795d2da773f057379e63e05':
     dependencies:
       '@textlint/regexp-string-matcher': 2.0.2
       '@textlint/types': 15.8.0
+      prh: 6.0.6
 
   '@babel/code-frame@7.10.4':
     dependencies:
@@ -10967,8 +10963,6 @@ snapshots:
 
   commander@7.2.0: {}
 
-  commandpost@1.4.0: {}
-
   compressible@2.0.18:
     dependencies:
       mime-db: 1.54.0
@@ -11180,7 +11174,7 @@ snapshots:
 
   diff-sequences@29.6.3: {}
 
-  diff@4.0.4: {}
+  diff@9.0.0: {}
 
   dnssd-advertise@1.1.6: {}
 
@@ -14045,11 +14039,11 @@ snapshots:
       react-is-18: react-is@18.3.1
       react-is-19: react-is@19.2.8
 
-  prh@5.4.4:
+  prh@6.0.6:
     dependencies:
-      commandpost: 1.4.0
-      diff: 4.0.4
-      js-yaml: 3.15.2
+      commander: 14.0.3
+      diff: 9.0.0
+      js-yaml: 4.3.2
 
   proc-log@4.2.0: {}
 
@@ -15111,12 +15105,6 @@ snapshots:
       textlint-rule-helper: 2.5.0
 
   textlint-rule-no-zero-width-spaces@1.0.1: {}
-
-  textlint-rule-prh@6.1.0:
-    dependencies:
-      '@babel/parser': 7.29.8
-      prh: 5.4.4
-      textlint-rule-helper: 2.5.0
 
   textlint-rule-sentence-length@5.2.1:
     dependencies:
