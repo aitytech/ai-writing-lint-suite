@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "writelikeyou-mcp",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-08-01",
+  // nodejs_compat IS required: the `agents` package needs node:async_hooks and
+  // @textlint/ast-tester needs node:assert/node:module -- without this flag the Worker fails
+  // to even start ("No such module 'node:async_hooks'"), confirmed by direct repro.
+  //
+  // This used to be disabled here because nodejs_compat's Node-look-alike
+  // `process.versions.node` fooled the Emscripten glue's own environment detection into
+  // taking its "I'm really Node" branch (createRequire(import.meta.url), undefined in this
+  // bundled context, threw) instead of honoring the instantiateWasm hook this integration
+  // depends on. That's fixed now at the source instead of by avoiding the flag: Suzume ships
+  // a second, worker-only WASM build (-sENVIRONMENT=['worker']) with the Node-detection branch
+  // compiled out entirely (confirmed via `grep -c "ENVIRONMENT_IS_NODE"` on the generated glue
+  // going from 1 to 0). worker.ts imports that build specifically, so nodejs_compat is safe to
+  // enable again -- see @aitytech/suzume-wasm's README/commit history for the full story.
+  "compatibility_flags": ["nodejs_compat"],
+  //
+  // Stateless handler (see worker.ts) -- no Durable Objects binding needed, so this stays
+  // on the free Workers plan (100k requests/day) instead of requiring the $5/mo paid plan
+  // that per-session McpAgent + Durable Objects would need.
+  // Custom Domains take a bare hostname only -- no wildcard, no path (confirmed by wrangler
+  // itself rejecting "mcp.writelikeyou.aitytech.com/*" at dev time). The /mcp path OpenAI's
+  // submission requires comes from createMcpHandler's own default route, not from this.
+  "routes": [{ "pattern": "mcp.writelikeyou.aitytech.com", "custom_domain": true }],
+  "observability": {
+    "enabled": true
+  }
+}

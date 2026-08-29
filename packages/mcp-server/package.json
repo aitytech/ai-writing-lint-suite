@@ -1,0 +1,26 @@
+{
+  "name": "@aitytech/writelikeyou-mcp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p .",
+    "start:stdio": "node dist/stdio.js",
+    "prewasm": "node scripts/copy-suzume-wasm.mjs",
+    "dev:http": "node scripts/copy-suzume-wasm.mjs && wrangler dev",
+    "deploy": "node scripts/copy-suzume-wasm.mjs && wrangler deploy",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aitytech/ai-writing-lint-core": "workspace:*",
+    "@aitytech/suzume": "github:aitytech/suzume-wasm#3304cb9ad51b21a835a292ab7efc405df15ae00b",
+    "@modelcontextprotocol/server": "2.0.0",
+    "agents": "0.22.0",
+    "zod": "4.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.4.0",
+    "typescript": "7.0.2",
+    "wrangler": "4.73.0"
+  }
+}

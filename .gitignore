@@ -19,5 +19,11 @@ macos/build/
 # Vite
 .vite/
 
+# mcp-server: suzume.wasm copied in from node_modules before each dev/deploy
+# (scripts/copy-suzume-wasm.mjs) so Wrangler's wasm module rule can see it -- regenerated,
+# never hand-edited.
+apps/mcp-server/src/vendor/
+packages/mcp-server/src/vendor/
+
 # Added by ggshield
 .cache_ggshield

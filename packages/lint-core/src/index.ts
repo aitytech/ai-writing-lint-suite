@@ -4,17 +4,15 @@ import * as textPluginModule from "@textlint/textlint-plugin-text";
 import * as markdownPluginModule from "@textlint/textlint-plugin-markdown";
 import presetEn from "@aitytech/textlint-rule-preset-ai-writing-en";
 import presetVi from "@aitytech/textlint-rule-preset-ai-writing-vi";
-// The JA preset (our aitytech fork, converted from a pure mirror 2026-08-29) is loaded lazily
-// via dynamic import in presetFor(), NOT statically here like EN/VI. Reason: it pulls in
-// kuromoji for tokenization, which pulls in zlibjs (an unmaintained pre-ESM UMD package, last
-// published ~2015) to decompress its dictionary in browser-like environments. zlibjs's own
-// "is my global already defined" check breaks under bundler rewriting --
-// "Cannot use 'in' operator to search for 'Zlib' in undefined" -- confirmed by direct repro,
-// not assumed. A static top-level import made that crash happen at MODULE LOAD, which killed
-// EN/VI too even when nobody asked for Japanese. Lazy-loading contains the blast radius to
-// only actual JA lint calls, and lets callers show "JA isn't available here yet" instead of a
-// blank crashed page. This is a known real gap, not a finished feature -- see this package's
-// README before shipping JA support in a bundled (web/React Native) environment.
+// The JA preset (our aitytech fork) is loaded lazily via dynamic import in presetFor(), NOT
+// statically here like EN/VI. Originally this was load-bearing: the JA preset used to pull in
+// kuromoji -> zlibjs, an unmaintained pre-ESM UMD package whose "is my global already
+// defined" check broke under bundler rewriting and crashed at MODULE LOAD -- a static import
+// here would have taken EN/VI down with it even when nobody asked for Japanese (confirmed by
+// direct repro, not assumed). The JA preset has since switched to @aitytech/suzume (a WASM
+// tokenizer with no filesystem dependency, see its own changelog), which doesn't have that
+// failure mode -- but the lazy import stays, now purely to keep JA's code (and Suzume's
+// ~560KB WASM binary) out of the bundle for EN/VI-only consumers.
 
 // Both plugin packages end up DOUBLE-wrapped under `.default.default` when imported as ESM here
 // (each layer of CJS<->ESM interop -- the package's own build, then Node's loader -- adds one
@@ -96,9 +94,18 @@ async function presetFor(language: Language) {
 }
 
 function normalizePreset(preset: unknown): typeof presetEn {
-    // All three presets export { rules, rulesConfig } — normalize the (default-export vs
-    // named-export) shape difference that can occur across bundlers/module systems.
-    return ((preset as { default?: typeof presetEn }).default ?? preset) as typeof presetEn;
+    // All three presets export { rules, rulesConfig }, but how many `.default` layers wrap
+    // that object varies by import path -- EN/VI's static imports come through single-wrapped,
+    // but the JA preset's dynamic import() ends up DOUBLE-wrapped under `.default.default` in
+    // plain Node (confirmed by direct inspection, the same double-CJS-interop shape already
+    // found for the textlint plugin packages elsewhere in this file). A single `??` unwrap left
+    // `preset.rules` undefined, which only breaks inside Object.entries() far from this line --
+    // unwrap by depth instead of assuming a fixed number of layers.
+    let current = preset as { default?: unknown; rules?: unknown };
+    for (let i = 0; i < 4 && current && !current.rules && current.default; i++) {
+        current = current.default as typeof current;
+    }
+    return current as typeof presetEn;
 }
 
 /**
@@ -157,6 +164,18 @@ export async function lintText(
     for (const f of findings) counts[f.severity]++;
 
     return { language, findings, counts };
+}
+
+/**
+ * Only needed on runtimes that disallow compiling WebAssembly from raw bytes at request time
+ * (currently: Cloudflare Workers -- see @aitytech/suzume-wasm's README for the full
+ * explanation). Call once with a module precompiled at deploy time (e.g. Wrangler's native
+ * `import mod from "./file.wasm"`) before the first "ja" lintText() call. Node/browser
+ * callers never need this; Suzume's default loading works fine there.
+ */
+export async function configureSuzumeWasm(wasmModule: WebAssembly.Module): Promise<void> {
+    const mod = await import("@aitytech/textlint-rule-preset-ai-writing-ja");
+    mod.configureSuzumeWasm(wasmModule);
 }
 
 /**
