@@ -25,5 +25,15 @@ macos/build/
 apps/mcp-server/src/vendor/
 packages/mcp-server/src/vendor/
 
+# forks/: standalone GitHub repos (each has its own .git + remote) that this monorepo consumes
+# as pinned git dependencies (see packages/*/package.json and pnpm-workspace.yaml allowBuilds),
+# kept as local clones here purely so dev work on them lives next to the code that depends on
+# them instead of scattered loose across AITYTECH/. Not part of this repo's own git history --
+# each is its own repo, committed and pushed independently.
+forks/
+
+# _archive/: superseded/dead local work kept around instead of deleted outright.
+_archive/
+
 # Added by ggshield
 .cache_ggshield
