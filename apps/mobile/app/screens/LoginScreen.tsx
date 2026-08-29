@@ -31,7 +31,7 @@ export const LoginScreen: FC<LoginScreenProps> = () => {
   useEffect(() => {
     // Here is where you could fetch credentials from keychain or storage and pre-fill the
     // form fields. Ignite's template ships hardcoded demo credentials here; removed rather
-    // than kept as placeholder text, since Tell-Tale has no account system to log into yet
+    // than kept as placeholder text, since WriteLikeYou has no account system to log into yet
     // (see BYOK plan) -- this whole auth flow is unused scaffolding pending that decision.
     setAuthEmail("")
     setAuthPassword("")

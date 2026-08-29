@@ -190,7 +190,7 @@ export function App() {
                     <span className="glyph" aria-hidden="true">
                         🖋️
                     </span>
-                    <h1>Tell-Tale</h1>
+                    <h1>WriteLikeYou</h1>
                     <button
                         type="button"
                         className="theme-toggle"
