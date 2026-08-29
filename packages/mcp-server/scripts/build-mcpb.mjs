@@ -180,6 +180,7 @@ async function main() {
     fs.rmSync(path.join(pkgStageDir, "package-lock.json"), { force: true });
 
     fs.copyFileSync(path.join(mcpServerDir, "manifest.json"), path.join(pkgStageDir, "manifest.json"));
+    fs.copyFileSync(path.join(mcpServerDir, "icon.png"), path.join(pkgStageDir, "icon.png"));
 
     log("Smoke-testing the staged (pre-zip) package by actually running it...");
     await smokeTest(pkgStageDir);
