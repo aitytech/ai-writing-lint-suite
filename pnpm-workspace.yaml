@@ -45,3 +45,7 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - '@vitejs/plugin-react@6.1.1'
   - zod@4.5.1
+
+patchedDependencies:
+  passive-voice@0.1.0: patches/passive-voice@0.1.0.patch
+  weasel-words@0.1.1: patches/weasel-words@0.1.1.patch

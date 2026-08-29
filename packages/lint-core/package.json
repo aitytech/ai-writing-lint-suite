@@ -18,10 +18,22 @@
     "./vale": {
       "types": "./dist/vale.d.ts",
       "default": "./dist/vale.js"
+    },
+    "./english-spelling": {
+      "types": "./dist/english-spelling.d.ts",
+      "default": "./dist/english-spelling.js"
+    },
+    "./english-style-lite": {
+      "types": "./dist/english-style-lite.d.ts",
+      "default": "./dist/english-style-lite.js"
+    },
+    "./english-grammar-lite": {
+      "types": "./dist/english-grammar-lite.d.ts",
+      "default": "./dist/english-grammar-lite.js"
     }
   },
   "scripts": {
-    "prebuild": "node scripts/generate-vi-dictionary.mjs",
+    "prebuild": "node scripts/generate-vi-dictionary.mjs && node scripts/generate-en-dictionary.mjs",
     "build": "tsc -p .",
     "postbuild": "node ../../scripts/obfuscate-dist.mjs dist",
     "dev": "tsc -p . --watch"
@@ -35,13 +47,21 @@
     "@textlint/textlint-plugin-markdown": "15.8.0",
     "@textlint/textlint-plugin-text": "15.8.0",
     "@vvago/vale": "3.17.1",
+    "dictionary-en": "4.0.0",
     "dictionary-vi": "3.0.0",
     "harper.js": "2.7.0",
-    "nspell": "2.1.5"
+    "nspell": "2.1.5",
+    "retext": "9.0.0",
+    "retext-contractions": "6.0.0",
+    "retext-english": "5.0.0",
+    "retext-indefinite-article": "5.0.0",
+    "retext-repeated-words": "5.0.0",
+    "write-good": "1.0.8"
   },
   "devDependencies": {
-    "@types/nspell": "2.1.6",
     "@types/node": "26.4.0",
+    "@types/nspell": "2.1.6",
+    "@types/write-good": "^1.0.3",
     "typescript": "7.0.2"
   }
 }

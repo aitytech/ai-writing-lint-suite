@@ -96,13 +96,22 @@ const OBFUSCATOR_OPTIONS = {
     transformObjectKeys: !light
 };
 
+// Pure-data files (inlined dictionary word lists -- see generate-{vi,en}-dictionary.mjs) have
+// no logic worth obfuscating, and running them through string-array/base64 transforms is
+// actively counterproductive: it roughly triples the raw file size (measured: en-dictionary-
+// data.js went 605KB -> 1.67MB) for zero added opacity (a word list "hidden" behind base64 is
+// still trivially a word list), and base64-encoded, split, obfuscated text compresses
+// meaningfully worse under gzip than the plain original -- exactly the wrong trade for a file
+// that only matters here because of its Cloudflare Workers gzip-budget footprint.
+const SKIP_PATTERN = /-dictionary-data\.js$/;
+
 function findJsFiles(dir) {
     const results = [];
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) {
             results.push(...findJsFiles(full));
-        } else if (entry.isFile() && full.endsWith(".js") && !full.endsWith(".d.js")) {
+        } else if (entry.isFile() && full.endsWith(".js") && !full.endsWith(".d.js") && !SKIP_PATTERN.test(full)) {
             results.push(full);
         }
     }

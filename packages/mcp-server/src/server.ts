@@ -54,20 +54,27 @@ const LintOutput = z.object({
 
 // Runs identically on both transports (stdio.ts for Claude Desktop, worker.ts for the
 // hosted/remote deployment) for the AI-writing-tell rules, VI spell-checking, and
-// Suzume-based JA grammar checks. The deliberate exceptions are both English and both
-// Claude-Desktop-only: real grammar/spelling checking (Harper) and real style-guide checking
-// (Vale). See createServer()'s doc comment, lint-core/src/harper.ts and lint-core/src/vale.ts
-// for why each is restricted.
+// Suzume-based JA grammar checks. English is where the two transports genuinely diverge:
+// Claude Desktop gets full grammar+spelling (Harper) and style-guide checking (Vale); the
+// hosted/Workers path (which is what ChatGPT and any other remote MCP client reach) gets
+// spelling only, via a lightweight dictionary lookup (nspell + dictionary-en) -- real
+// coverage, just lower-fidelity than Harper's actual grammar rules. See createServer()'s doc
+// comment and each of lint-core/src/{harper,vale,english-spelling}.ts for why each is scoped
+// the way it is.
 const TOOL_DESCRIPTION =
     "Detects AI-writing tells (stock phrases, hedging, AI self-disclosure, structural " +
     "cliches) in English, Vietnamese, or Japanese text using a rule-based linter, not " +
-    "another LLM's impression. Also runs real grammar/spelling checking on top of the " +
-    "AI-tell rules: full grammar+spelling on English (where available), spelling only on " +
-    "Vietnamese (no mature open-source Vietnamese grammar checker exists), and grammar " +
-    "checks on Japanese (particle repetition, mixed register, sentence length, ...). On " +
-    "English it additionally runs style-guide checks (weasel words, wordiness, cliches, " +
-    "passive voice) where available -- a separate concern from grammar, reported with " +
-    "`vale/...` rule ids. Call " +
+    "another LLM's impression. Also runs real spelling/grammar/style checking on top of the " +
+    "AI-tell rules: on English, Claude Desktop gets full grammar+spelling via Harper " +
+    "(`harper/...` rule ids) and full style-guide checking via Vale (`vale/...`); every " +
+    "other transport, including ChatGPT, gets dictionary-based spelling " +
+    "(`en-spelling/misspelled`), a narrower set of grammar checks -- a/an agreement, " +
+    "repeated words, missing-apostrophe contractions -- via retext (`retext/...`), and " +
+    "style-guide checking via the same write-good rule set Vale's own style is ported from " +
+    "(`write-good/style`) -- real coverage on every transport, just shallower than Harper+Vale " +
+    "off Desktop. Spelling only on Vietnamese (no mature open-source Vietnamese grammar " +
+    "checker exists); grammar checks on Japanese (particle repetition, mixed register, " +
+    "sentence length, ...), identical on every transport. Call " +
     "this before finalizing any draft the user will publish. Each finding names the exact " +
     "rule violated and the exact text span. When fixing an AI-writing-tell finding, rewrite " +
     "the flagged span's meaning substantially: light editing rarely changes how " +
@@ -95,6 +102,34 @@ export type CheckEnglishGrammar = (text: string) => Promise<LintFinding[]>;
  */
 export type CheckEnglishStyle = (text: string) => Promise<LintFinding[]>;
 
+/**
+ * Optional dependency, but the INVERSE injection pattern from CheckEnglishGrammar/
+ * CheckEnglishStyle above: worker.ts injects this, stdio.ts does not. Harper already gives
+ * Claude Desktop full grammar+spelling coverage at higher quality than a plain dictionary
+ * lookup (real grammar rules, not just "is this a real word") -- injecting this there too
+ * would duplicate or under-quality some of Harper's own findings rather than fill a real gap.
+ * ChatGPT (which can only reach the Workers transport) had NO English spell-checking at all
+ * before this -- a real user hit this directly ("recieve"/"alot" went unflagged through the
+ * ChatGPT connector while the same text correctly flagged both through Claude Desktop's
+ * Harper pass) -- see lint-core/src/english-spelling.ts for the full story and scope.
+ */
+export type CheckEnglishSpelling = (text: string) => Promise<LintFinding[]>;
+
+/**
+ * Same inverse-injection shape as CheckEnglishSpelling above, worker.ts-only, for the same
+ * reason: Harper already covers everything retext-indefinite-article/-repeated-words/
+ * -contractions check (a/an agreement, doubled words, missing-apostrophe contractions), at
+ * higher fidelity, on Claude Desktop -- see lint-core/src/english-grammar-lite.ts for the
+ * full scope (a genuinely narrower slice of "grammar" than Harper's ~823 rules, documented
+ * honestly there, not oversold here).
+ */
+export type CheckEnglishGrammarLite = (text: string) => Promise<LintFinding[]>;
+
+/** Same inverse-injection shape, worker.ts-only, for the same reason as the two above: Vale
+ * already covers this (and more) on Claude Desktop. See
+ * lint-core/src/english-style-lite.ts. */
+export type CheckEnglishStyleLite = (text: string) => Promise<LintFinding[]>;
+
 function mergeFindings(result: LintResult, extra: LintFinding[]): LintResult {
     if (extra.length === 0) return result;
     return {
@@ -110,18 +145,23 @@ function mergeFindings(result: LintResult, extra: LintFinding[]): LintResult {
 
 /**
  * Shared factory for both transports -- the tool registration lives in exactly one place so
- * the two entrypoints can never drift into exposing different behavior. `checkEnglishGrammar`
- * and `checkEnglishStyle` are the intentional exceptions: stdio.ts (Claude Desktop) injects
- * both, worker.ts injects neither (and has no import path that could reach either -- see
- * lint-core/src/harper.ts and lint-core/src/vale.ts).
+ * the two entrypoints can never drift into exposing different behavior. The five
+ * `checkEnglish*` options are the intentional exceptions: stdio.ts (Claude Desktop) injects
+ * `checkEnglishGrammar` (Harper) and `checkEnglishStyle` (Vale); worker.ts injects
+ * `checkEnglishSpelling` (nspell), `checkEnglishGrammarLite` (retext), and
+ * `checkEnglishStyleLite` (write-good) -- see each type's own doc comment above for exactly
+ * why each transport gets what it gets.
  */
 export function createServer(
     options: {
         checkEnglishGrammar?: CheckEnglishGrammar;
         checkEnglishStyle?: CheckEnglishStyle;
+        checkEnglishSpelling?: CheckEnglishSpelling;
+        checkEnglishGrammarLite?: CheckEnglishGrammarLite;
+        checkEnglishStyleLite?: CheckEnglishStyleLite;
     } = {}
 ): McpServer {
-    const { checkEnglishGrammar, checkEnglishStyle } = options;
+    const { checkEnglishGrammar, checkEnglishStyle, checkEnglishSpelling, checkEnglishGrammarLite, checkEnglishStyleLite } = options;
     const server = new McpServer(
         { name: "writelikeyou", version: "0.1.0" },
         { capabilities: { tools: {} } }
@@ -170,20 +210,32 @@ export function createServer(
             // Real grammar/spelling and style-guide findings, additive to the AI-writing-tell
             // findings above and to each other -- Harper and Vale check different things (is
             // this correct English? vs. is this well-written English?) and a span can
-            // legitimately draw a finding from both. EN is only offered where injected (Claude
-            // Desktop; see this function's doc comment) -- VI (nspell) runs on every transport,
-            // it's cheap enough not to need the same restriction (see
+            // legitimately draw a finding from both. Exactly one of each pair
+            // (checkEnglishGrammar/checkEnglishGrammarLite, checkEnglishStyle/
+            // checkEnglishStyleLite) is ever injected by a given transport, never both -- see
+            // each *Lite type's own doc comment for why stacking both would just duplicate the
+            // Desktop-only engine's own findings at lower fidelity rather than add coverage.
+            // checkEnglishSpelling has no Desktop counterpart to pair against (Harper's own
+            // spelling coverage already subsumes it there). VI (nspell) runs on every transport
+            // unconditionally, it's cheap enough not to need any of this restriction (see
             // lint-core/src/vietnamese-spelling.ts). Merged before truncation/counting so
             // MAX_FINDINGS and the summary line both reflect the combined total, not several
-            // separate numbers. Run concurrently: Vale is a subprocess round-trip and Harper is
-            // CPU-bound WASM, so there is no reason for either to wait on the other.
+            // separate numbers. Run concurrently: Vale is a subprocess round-trip, Harper is
+            // CPU-bound WASM, and the two *Lite engines are pure sync/async JS -- none of them
+            // has a reason to wait on any other.
             if (resolvedLanguage === "en") {
-                const [grammar, style] = await Promise.all([
+                const [grammar, style, spelling, grammarLite, styleLite] = await Promise.all([
                     checkEnglishGrammar ? checkEnglishGrammar(text) : Promise.resolve([]),
-                    checkEnglishStyle ? checkEnglishStyle(text) : Promise.resolve([])
+                    checkEnglishStyle ? checkEnglishStyle(text) : Promise.resolve([]),
+                    checkEnglishSpelling ? checkEnglishSpelling(text) : Promise.resolve([]),
+                    checkEnglishGrammarLite ? checkEnglishGrammarLite(text) : Promise.resolve([]),
+                    checkEnglishStyleLite ? checkEnglishStyleLite(text) : Promise.resolve([])
                 ]);
                 result = mergeFindings(result, grammar);
                 result = mergeFindings(result, style);
+                result = mergeFindings(result, spelling);
+                result = mergeFindings(result, grammarLite);
+                result = mergeFindings(result, styleLite);
             } else if (resolvedLanguage === "vi") {
                 result = mergeFindings(result, await checkVietnameseSpelling(text));
             }
@@ -225,7 +277,11 @@ export function createServer(
                 "Harper's ~800 English grammar/spelling rules or Vale's English style-guide " +
                 "rules individually (both Claude Desktop only, see lint_text) -- those " +
                 "surface through lint_text's own findings, with `harper/<category>` and " +
-                "`vale/<style>.<rule>` as their ruleIds respectively.",
+                "`vale/<style>.<rule>` as their ruleIds respectively. On transports without " +
+                "Harper/Vale (e.g. ChatGPT, via the hosted endpoint), English findings " +
+                "instead use `en-spelling/misspelled` (spelling), `retext/<plugin-name>` " +
+                "(grammar: a/an agreement, repeated words, contractions), and " +
+                "`write-good/style` (style guide) as their ruleIds.",
             inputSchema: z.object({
                 language: z.enum(["en", "vi", "ja"]).describe("Which preset's rules to list.")
             }),

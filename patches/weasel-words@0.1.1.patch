@@ -1,0 +1,12 @@
+diff --git a/weasel.js b/weasel.js
+index a6bc8c40c843d7faef33120074d68a57992e7b27..76d908a473e04f53de71967a5e9cff7420c5115a 100644
+--- a/weasel.js
++++ b/weasel.js
+@@ -37,6 +37,7 @@ var re = new RegExp('\\b(' + weasels.join('|') + ')\\b', 'gi');
+ 
+ module.exports = function (text, opts) {
+   var suggestions = [];
++  var match;
+   while (match = re.exec(text)) {
+     var weasel = match[0].toLowerCase();
+     if (exceptions.indexOf(weasel) === -1 ||

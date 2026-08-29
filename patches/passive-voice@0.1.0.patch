@@ -1,0 +1,12 @@
+diff --git a/passive.js b/passive.js
+index b6cf09a415b9e653598ce3108f31c0f7c0c55e42..c651bc9eb610c99edacb9d59cbc799e31a8bb12c 100644
+--- a/passive.js
++++ b/passive.js
+@@ -188,6 +188,7 @@ module.exports = function (text, options) {
+           (byRe || constructByRe()) : re; // not sorry
+ 
+   var suggestions = [];
++  var match;
+   while (match = r.exec(text)) {
+     if (exceptions.indexOf(match[2].toLowerCase()) === -1) {
+       suggestions.push({

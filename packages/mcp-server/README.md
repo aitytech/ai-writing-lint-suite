@@ -19,19 +19,66 @@ model call.
 
 ### What runs where
 
-|  | Claude Desktop (stdio) | Cloudflare Workers (hosted) |
+|  | Claude Desktop (stdio) | Cloudflare Workers (hosted, incl. ChatGPT) |
 |---|---|---|
 | AI-writing-tell rules (EN/VI/JA) | ✅ | ✅ |
 | JA grammar (particles, register, sentence length, ...) | ✅ 12 rules | ✅ same 12 rules |
 | JA proofreading / 校正 (表記統一, 用字用語統一, 誤用) | ✅ 11 rules | ✅ same 11 rules |
 | VI spelling (nspell + dictionary-vi) | ✅ | ✅ |
-| EN grammar/spelling (Harper) | ✅ | ❌ (see below) |
-| EN style guide (Vale + write-good) | ✅ | ❌ (see below) |
+| EN spelling | ✅ Harper, full grammar-aware | ✅ nspell + dictionary-en, dictionary-only (see below) |
+| EN grammar beyond spelling (a/an, repeated words, contractions, ...) | ✅ Harper (~823 rules) | ✅ retext (3 targeted plugins — see below) |
+| EN style guide (weasel words, passive voice, wordiness, cliches, ...) | ✅ Vale, 7 active styles | ✅ write-good directly, 7 checks (see below) |
+| EN grammar Harper catches that nothing else does (agreement, tense, most punctuation, ...) | ✅ Harper | ❌ (no lightweight equivalent exists) |
 
-Desktop and Workers run identical behavior for everything except the two real English
-engines — those are the only deliberate, documented gaps, not oversights. They are separate
-concerns and both run: Harper answers "is this correct English?", Vale answers "is this
-well-written English?", and a span can legitimately draw a finding from each.
+Desktop and Workers run identical behavior for almost everything, and English -- the one
+place they used to genuinely diverge -- is now close on every axis except Harper's full
+depth:
+
+- **Spelling**: both transports catch it. A real ChatGPT user hit this gap directly
+  ("recieve"/"alot" went unflagged through the Workers path while Harper correctly caught
+  both through Claude Desktop) — closed by adding `checkEnglishSpelling` (nspell +
+  dictionary-en, pure JS, no WASM, ~180KB gzip added to the Workers bundle) as a
+  worker.ts-only injection, deliberately never added to stdio.ts since Harper's spelling
+  there is already higher-fidelity (real grammar-aware checking, not just a dictionary
+  lookup) and stacking both would just duplicate findings. See
+  `lint-core/src/english-spelling.ts` for the full story, including its own honestly-
+  documented limitation: nspell only knows "is this a real word" (so "alot" is flagged, but
+  its suggestions are single real words like "allot", not Harper's word-pair-aware "a lot").
+- **Grammar beyond spelling**: both transports catch *something*, at very different depth.
+  Workers gets `checkEnglishGrammarLite` (`lint-core/src/english-grammar-lite.ts`): three
+  retext plugins (unifiedjs/retext, MIT) — a/an agreement, repeated words, missing-apostrophe
+  contractions — each verified against real hand-written test cases, not assumed from their
+  READMEs. Real coverage, genuinely narrower than Harper's ~823 rules (no subject-verb
+  agreement, no tense checking, no article/preposition choice beyond a/an — no comparably
+  lightweight pure-JS implementation of those was found). Injected worker.ts-only for the same
+  duplicate-Harper reason as spelling above.
+- **Style guide**: both transports catch it, and via the *same underlying rule set*. Vale's
+  own `write-good` style (Claude Desktop) is a documented port of the `write-good` npm package
+  — Workers now calls that exact npm package directly (`checkEnglishStyleLite`, see
+  `lint-core/src/english-style-lite.ts`), matching Vale's severity-per-check mapping (checked
+  against the actual vendored `styles/write-good/*.yml` files, not assumed uniform) and its
+  choice to omit the `adverb` check. Not byte-for-byte identical to Vale's port, but the same
+  checks, same category, same spirit — and Workers only gets write-good's 7 checks, not Vale's
+  other 6 active styles beyond it.
+- **What's still Desktop-only**: everything Harper catches that has no lightweight pure-JS
+  equivalent — subject-verb agreement, tense, most punctuation rules, and the bulk of Harper's
+  ~823-rule surface generally. Researched directly (not assumed absent) before settling here;
+  no pure-JS, no-native-binary implementation of general English grammar checking at anywhere
+  near Harper's quality was found to exist. This is the one real, permanent gap left.
+
+**A real bug found and fixed while building the retext/write-good integration**: two of
+write-good's own sub-dependencies (`weasel-words@0.1.1`, `passive-voice@0.1.0` — small,
+unmaintained micro-packages from write-good's dependency tree) reference an undeclared
+`match` variable inside a `while (match = re.exec(text))` loop. Node's CommonJS module wrapper
+runs in sloppy mode, so this silently creates an implicit global and just works there — but
+Wrangler's ESM bundle for Workers runs in strict mode, where the same code throws
+`ReferenceError: match is not defined`. Confirmed by bisecting exactly which of the three new
+engines caused it (checkEnglishStyleLite), reproduced in a plain Node script with zero
+Workers-specific code (ruling out an obfuscation or bundler bug), then traced to these two
+files directly. Fixed via `pnpm patch` (`patches/weasel-words@0.1.1.patch`,
+`patches/passive-voice@0.1.0.patch`, registered in `pnpm-workspace.yaml`'s
+`patchedDependencies`) rather than editing `node_modules` by hand -- survives every future
+`pnpm install`, unlike a manual edit would.
 
 ## Why Japanese needed its own fix
 

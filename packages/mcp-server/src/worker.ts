@@ -1,5 +1,8 @@
 import { createMcpHandler } from "agents/mcp/server";
 import { configureSuzumeWasm } from "@aitytech/ai-writing-lint-core";
+import { checkEnglishSpelling } from "@aitytech/ai-writing-lint-core/english-spelling";
+import { checkEnglishGrammarLite } from "@aitytech/ai-writing-lint-core/english-grammar-lite";
+import { checkEnglishStyleLite } from "@aitytech/ai-writing-lint-core/english-style-lite";
 import { createServer } from "./server.js";
 // Wrangler compiles a .wasm import to an already-COMPILED WebAssembly.Module at deploy time
 // (its native wasm module rule), not raw bytes -- required here, not a style choice: Workers
@@ -35,15 +38,24 @@ await configureSuzumeWasm(suzumeWasmModule as WebAssembly.Module);
 // so a request can't spoof a Host header to route around Cloudflare, and a browser page on
 // an unrelated site can't quietly call this endpoint on a visitor's behalf and burn through
 // the free-tier request quota under our name.
-// Wrapped rather than passed directly: createServer()'s single param is its own
-// {checkEnglishGrammar} options bag (see server.ts), not createMcpHandler's per-request
-// McpRequestContext -- this transport never injects a grammar checker (see stdio.ts and
-// lint-core/src/harper.ts for why), so the wrapper just discards ctx and calls createServer
-// with no options.
-const handler = createMcpHandler(() => createServer(), {
-    allowedHostnames: ["mcp.writelikeyou.aitytech.com", "localhost", "127.0.0.1"],
-    allowedOriginHostnames: ["mcp.writelikeyou.aitytech.com"]
-});
+// Wrapped rather than passed directly: createServer()'s single param is its own options bag
+// (see server.ts), not createMcpHandler's per-request McpRequestContext -- this transport
+// never injects Harper/Vale (see stdio.ts and lint-core/src/{harper,vale}.ts for why), but
+// DOES inject three pure-JS, no-WASM/native-binary lightweight engines small enough for
+// Workers' size budget: checkEnglishSpelling (nspell + dictionary-en),
+// checkEnglishGrammarLite (retext: a/an agreement, repeated words, missing-apostrophe
+// contractions), and checkEnglishStyleLite (write-good: weasel words, passive voice,
+// wordiness, cliches). See each of lint-core/src/english-{spelling,grammar-lite,style-lite}.ts
+// for the full story -- together they mean ChatGPT and any other client reaching only this
+// hosted endpoint go from zero English spelling/grammar/style coverage to real (if narrower
+// than Harper+Vale) coverage across all three categories.
+const handler = createMcpHandler(
+    () => createServer({ checkEnglishSpelling, checkEnglishGrammarLite, checkEnglishStyleLite }),
+    {
+        allowedHostnames: ["mcp.writelikeyou.aitytech.com", "localhost", "127.0.0.1"],
+        allowedOriginHostnames: ["mcp.writelikeyou.aitytech.com"]
+    }
+);
 
 export default {
     fetch: handler
