@@ -9,6 +9,7 @@
     "prewasm": "node scripts/copy-suzume-wasm.mjs",
     "dev:http": "node scripts/copy-suzume-wasm.mjs && wrangler dev",
     "deploy": "node scripts/copy-suzume-wasm.mjs && wrangler deploy",
+    "package:mcpb": "node scripts/build-mcpb.mjs",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

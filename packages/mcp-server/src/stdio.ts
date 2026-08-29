@@ -4,8 +4,9 @@ import { checkEnglishStyle } from "@aitytech/ai-writing-lint-core/vale";
 import { createServer } from "./server.js";
 
 // Claude Desktop entrypoint: launches this as a local child process and talks JSON-RPC over
-// stdin/stdout. No network, no hosting, no cost -- this is the free/instant path from the
-// distribution plan (packaged as a .mcpb Desktop Extension so users don't hand-edit config).
+// stdin/stdout. No network, no hosting, no cost -- this is the free/instant distribution path,
+// packaged as a .mcpb Desktop Extension (see scripts/build-mcpb.mjs and this package's README,
+// "Claude Desktop" section) so users install with one click instead of hand-editing config.
 //
 // The two real English checkers are injected only here, never in worker.ts, each for its own
 // reason -- together they are the entire capability gap between the two transports:

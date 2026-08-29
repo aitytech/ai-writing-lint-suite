@@ -254,6 +254,34 @@ is 14.
 
 ## Claude Desktop (stdio)
 
+**Recommended: one-click install via the `.mcpb` bundle.** [MCP Bundles](https://github.com/modelcontextprotocol/mcpb)
+(formerly Desktop Extensions) are a zip archive of a server + its dependencies + a
+`manifest.json`, installed via Claude Desktop's Settings -> Extensions -> Install Extension...
+-- no manual JSON editing.
+
+```bash
+pnpm --filter @aitytech/writelikeyou-mcp package:mcpb
+```
+
+produces `packages/mcp-server/dist-mcpb/writelikeyou-<version>.mcpb`. The build
+(`scripts/build-mcpb.mjs`) stages `@aitytech/ai-writing-lint-core` as a fully standalone
+package via a plain `npm install` (not `pnpm deploy`, which turned out to symlink workspace
+deps back to this monorepo rather than copy real files -- see the script's own header comment
+for the full story of why that was wrong and how it was caught), then smoke-tests the staged,
+pre-zip package by actually spawning it and asserting a real `harper/Spelling` finding comes
+back, before packing. Verified end-to-end from a directory with zero relation to this
+monorepo, covering all three languages and every engine (Harper, Vale, Suzume-based JA,
+VI spelling/notation) -- not just the smoke test's one assertion.
+
+Both `agents` and `@aitytech/suzume` are dropped from this bundle's own dependencies (neither
+is imported by the stdio path -- `agents` is worker.ts-only and also drags in ~80MB of
+build-tooling transitive weight with no runtime purpose here; suzume comes along inside
+lint-core's own staged copy already). Bundle size: **~53MB packed / ~133MB unpacked**, mostly
+Vale's native binary (~40MB) and Harper's WASM (~15MB) -- both real engines, not bloat.
+
+**Alternative: manual stdio config**, if you'd rather run from a live build (e.g. while
+developing a rule) instead of the packaged bundle:
+
 ```bash
 pnpm --filter @aitytech/writelikeyou-mcp build
 ```

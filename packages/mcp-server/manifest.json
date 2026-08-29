@@ -1,0 +1,38 @@
+{
+  "manifest_version": "0.3",
+  "name": "writelikeyou",
+  "display_name": "WriteLikeYou",
+  "version": "0.1.0",
+  "description": "Detects AI-writing tells and runs real grammar/spelling/style checking on English, Vietnamese, and Japanese text -- deterministic rule engines only, no third-party AI service ever sees your text.",
+  "long_description": "WriteLikeYou lints a draft for stock AI-writing tells (hedging, hype phrases, structural cliches, AI self-disclosure) across English, Vietnamese, and Japanese, and layers real engines on top: Harper for English grammar/spelling (~823 rules), Vale for English style-guide checking (weasel words, wordiness, passive voice), real Vietnamese spelling via nspell + a Vietnamese dictionary, and Japanese grammar/register/proofreading checks (particle repetition, dearu/desumasu consistency, notation unification) via a from-scratch Suzume-based morphological pipeline. Every finding names the exact rule and text span, and nothing is sent to any AI model or third-party service -- every check here is a deterministic rule engine running locally in this extension's own process.",
+  "author": {
+    "name": "AITYTECH"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aitytech/ai-writing-lint-suite.git"
+  },
+  "license": "MIT",
+  "keywords": ["writing", "grammar", "spelling", "style", "proofreading", "japanese", "vietnamese", "english", "linter"],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/stdio.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/stdio.js"]
+    }
+  },
+  "tools": [
+    { "name": "lint_text", "description": "Detects AI-writing tells and runs real grammar/spelling/style checking on English, Vietnamese, or Japanese text." },
+    { "name": "list_rules", "description": "Lists the rules lint_text can flag for a given language." },
+    { "name": "compare_text", "description": "Lints two versions of the same draft and reports whether an edit actually reduced AI-writing tells." }
+  ],
+  "tools_generated": false,
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  }
+}
