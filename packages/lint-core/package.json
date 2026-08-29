@@ -14,6 +14,10 @@
     "./harper": {
       "types": "./dist/harper.d.ts",
       "default": "./dist/harper.js"
+    },
+    "./vale": {
+      "types": "./dist/vale.d.ts",
+      "default": "./dist/vale.js"
     }
   },
   "scripts": {
@@ -24,17 +28,19 @@
   "dependencies": {
     "@aitytech/suzume": "github:aitytech/suzume-wasm#3304cb9ad51b21a835a292ab7efc405df15ae00b",
     "@aitytech/textlint-rule-preset-ai-writing-en": "github:aitytech/textlint-rule-preset-ai-writing-en#b1a3c5b6a06c22af6aba604b2139391113188087",
-    "@aitytech/textlint-rule-preset-ai-writing-ja": "github:aitytech/textlint-rule-preset-ai-writing-ja#1ae8fa99d7b986369fc4d7becaed46e95ba12fb6",
+    "@aitytech/textlint-rule-preset-ai-writing-ja": "github:aitytech/textlint-rule-preset-ai-writing-ja#8b00a7ae30067931b34ba9f17c7d08710f68572e",
     "@aitytech/textlint-rule-preset-ai-writing-vi": "github:aitytech/textlint-rule-preset-ai-writing-vi#bb0f17b2d6ac3b72e1fe283ab2a5aec5d1ce8632",
     "@textlint/kernel": "15.8.0",
     "@textlint/textlint-plugin-markdown": "15.8.0",
     "@textlint/textlint-plugin-text": "15.8.0",
+    "@vvago/vale": "3.17.1",
     "dictionary-vi": "3.0.0",
     "harper.js": "2.7.0",
     "nspell": "2.1.5"
   },
   "devDependencies": {
     "@types/nspell": "2.1.6",
+    "@types/node": "26.4.0",
     "typescript": "7.0.2"
   }
 }

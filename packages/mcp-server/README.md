@@ -25,9 +25,12 @@ model call.
 | JA grammar (particles, register, sentence length, ...) | ✅ 12 rules | ✅ same 12 rules |
 | VI spelling (nspell + dictionary-vi) | ✅ | ✅ |
 | EN grammar/spelling (Harper) | ✅ | ❌ (see below) |
+| EN style guide (Vale + write-good) | ✅ | ❌ (see below) |
 
-Desktop and Workers run identical behavior for everything except EN grammar/spelling —
-that's the one deliberate, documented gap, not an oversight.
+Desktop and Workers run identical behavior for everything except the two real English
+engines — those are the only deliberate, documented gaps, not oversights. They are separate
+concerns and both run: Harper answers "is this correct English?", Vale answers "is this
+well-written English?", and a span can legitimately draw a finding from each.
 
 ## Why Japanese needed its own fix
 
@@ -142,6 +145,83 @@ decision, injected via dependency injection (`createServer({ checkEnglishGrammar
 `stdio.ts`) so `worker.ts` has no import path that could reach it at all -- confirmed by
 `wrangler deploy --dry-run` and grepping the built `worker.js` for "harper" (zero matches)
 after wiring this in, not just assumed from the code structure.
+
+## Real style-guide checking (Vale, EN, Claude Desktop only)
+
+English text gets a third pass, distinct from both of the other two: [Vale](https://vale.sh)
+(MIT) — the prose linter Google, Microsoft, GitHub and RedHat all publish style guides for.
+Where the preset catches "this reads like AI wrote it" and Harper catches mistakes, Vale
+catches *style-guide and terminology* violations: weasel words, wordiness, cliches, passive
+voice. It is the English counterpart to what `textlint-rule-prh` does for Japanese notation
+consistency elsewhere in this monorepo. Findings arrive with `vale/<style>.<rule>` rule ids
+(e.g. `vale/write-good.Weasel`), matching the existing `harper/<category>` convention.
+
+**Also stdio-only, but for a harder reason than Harper.** Harper is merely *too big* for
+Workers — a smaller build would in principle fix it. Vale ships as a **native Go binary and
+has no WASM build in existence** (confirmed by search; no such target exists upstream). That
+rules out both non-Node targets outright rather than by budget: Cloudflare Workers executes
+no binaries at all, and `apps/web`'s browser context has no WASM path to fall back to the way
+Harper does. `child_process` is the only way to run it, so it is injected in `stdio.ts` only
+(`createServer({ checkEnglishGrammar, checkEnglishStyle })`) and `worker.ts` has no import
+path that reaches `lint-core/src/vale.ts` at all.
+
+Verified, not assumed — `wrangler deploy --dry-run` before and after wiring this in:
+gzip **671.69 KiB → 671.87 KiB** (+0.18 KiB, entirely the two tool-description strings below).
+Grepping the built `worker.js` for `child_process`, `@vvago`, `write-good` and `.vale.ini`
+returns zero matches each; the only new `vale` matches are the three doc strings in
+`TOOL_DESCRIPTION` and `list_rules`. (A raw count of "vale" is misleading — the bundle already
+carried 11 pre-existing matches from `EvalError` and the word "equivalent", at HEAD and after,
+which is why this was checked with a context dump rather than `grep -c`.)
+
+### Rules and configuration
+
+The binary comes from [`@vvago/vale`](https://www.npmjs.com/package/@vvago/vale) (pinned
+`3.17.1`), whose postinstall downloads the ~40MB platform binary — hence its entry in
+`pnpm-workspace.yaml`'s `allowBuilds`. It is a dependency of **`lint-core`**, not of this
+package, for the same reason `harper.js` is: the code that spawns it lives there, and under
+pnpm's isolated `node_modules` a package can only resolve what it declares (verified by direct
+repro — `MODULE_NOT_FOUND` from `lint-core/dist/` when only this package declared it).
+
+Vale has **no meaningful built-in style**: pointed at an empty `StylesPath` it emits literally
+zero findings. So the rules are vendored — the [`write-good`](https://github.com/vale-cli/write-good)
+Vale style (MIT, errata.ai; itself a port of the well-known `write-good` npm tool) at
+`packages/lint-core/styles/write-good/`, fetched verbatim by `curl` at commit `c9ceca7`
+(2025-05-23). See that directory's `README.md` for the re-fetch command and attribution.
+
+All eight upstream rule files are vendored; seven are active. `E-Prime` is switched off in
+`packages/lint-core/.vale.ini` with the reasoning inline — it is a writing *exercise* (prose
+without any form of "to be"), not a style-guide rule, and measured 17 of 25 findings (68%) on
+an ordinary 146-word draft, all "Try to avoid using 'is'". Left on it would bury the genuinely
+useful findings and eat the `MAX_FINDINGS` cap before Harper's were counted. Deleting that one
+line re-enables it.
+
+Severity follows each rule's own authored level, mapped Vale→this project as
+`error`→`error`, `warning`→`warning`, `suggestion`→`info`. Note that upstream sets `ThereIs`
+to `error`, so a sentence opening with "There is" is reported at the same level as a spelling
+mistake — that is upstream's judgment, preserved deliberately rather than silently re-scored.
+
+### Implementation notes
+
+`checkEnglishStyle()` (`lint-core/src/vale.ts`) pipes the draft to Vale's **stdin** rather than
+writing a temp file, so the text never touches disk and there is nothing to clean up or collide
+under concurrent calls. It uses `spawn` with an argv array — never `exec` — since the text is
+arbitrary untrusted input and there is no shell to inject into.
+
+Every path is resolved from `import.meta.url`, never `process.cwd()`, because Claude Desktop
+launches this server from an arbitrary working directory. `--config` is passed explicitly (so
+Vale never searches upward for someone else's `.vale.ini`), `--no-global` ignores any
+`~/.vale.ini`, and `VALE_CONFIG_PATH`/`VALE_STYLES_PATH` are stripped from the child's
+environment. Verified by running the built `dist/stdio.js` from `/` — findings identical.
+
+One correctness trap worth knowing: Vale's `Span` is **not** a document offset. It is a
+1-indexed, *inclusive* column pair scoped to `Line`, counted in **Unicode code points**. All
+three plausible readings produce identical-looking numbers on ASCII single-line input and only
+diverge later, so this was pinned down against real multi-byte input rather than assumed
+(`"これは日本語です。café naïve — this is a very good idea."` reports `Span [33, 36]` for "very"
+— its code-point column; the byte offset would have been 53). Since Go counts runes and JS
+strings are UTF-16, `vale.ts` converts explicitly, which matters for astral characters: in
+`"🎉🎉 this is a very good idea."` the correct UTF-16 range is `[15, 19]` while the raw column
+is 14.
 
 ## Claude Desktop (stdio)
 
