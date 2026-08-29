@@ -79,6 +79,53 @@ function copyRecursive(src, dest) {
     fs.cpSync(src, dest, { recursive: true });
 }
 
+/**
+ * Works around a real bug in harper.js 2.7.0 (latest published version -- confirmed no newer
+ * release fixes it), found by reproducing a real user-facing failure, not by reading harper.js
+ * source speculatively: installing the packed .mcpb into Claude Desktop (which always installs
+ * under `~/Library/Application Support/Claude/Claude Extensions/...` -- "Application Support"
+ * always has a literal space in it on macOS) failed with
+ * `ENOENT: ... harper_wasm_slim_bg.wasm` even though the file demonstrably existed on disk at
+ * that exact path. Root-caused by running the installed dist/stdio.js directly and triggering
+ * the Harper code path: harper.js's generated WASM loader
+ * (dist/BinaryModule-*.js, function getInitInput) does
+ * `fs.readFile(new URL(binary).pathname, callback)` -- URL.pathname does NOT decode percent-
+ * escapes, so a space in the install path (encoded as %20 in the file:// URL) leaks into the
+ * fs path as a literal "%20" that no file on disk actually has. The fix is one line: pass the
+ * URL object itself to fs.readFile (Node's fs functions accept a URL directly and decode it
+ * correctly) instead of its .pathname string.
+ *
+ * This patches harper.js's OWN dist output post-install (not our code) -- a real upstream bug,
+ * not something introduced by this build. Patching here (applied fresh every build, like
+ * patch-package) was chosen over forking harper.js: harper.js's WASM binary is built from Rust
+ * via wasm-bindgen, so a real fork would mean standing up and maintaining a Rust/WASM toolchain
+ * for a one-line JS fix -- not worth it unless this patch stops applying cleanly across
+ * harper.js version bumps, at which point revisit.
+ */
+function patchHarperWasmPathBug(lintCoreStageDir) {
+    const dir = path.join(lintCoreStageDir, "node_modules", "harper.js", "dist");
+    const candidates = fs.readdirSync(dir).filter((f) => f.startsWith("BinaryModule-") && f.endsWith(".js"));
+    if (candidates.length === 0) {
+        throw new Error(`no BinaryModule-*.js found in ${dir} -- harper.js's internal file layout changed, this patch needs updating.`);
+    }
+    const BUGGY = "fs.readFile(new URL(binary).pathname, (err, data) => {";
+    const FIXED = "fs.readFile(new URL(binary), (err, data) => {";
+    let patched = 0;
+    for (const file of candidates) {
+        const full = path.join(dir, file);
+        const content = fs.readFileSync(full, "utf8");
+        if (!content.includes(BUGGY)) continue;
+        fs.writeFileSync(full, content.replace(BUGGY, FIXED));
+        patched++;
+    }
+    if (patched === 0) {
+        throw new Error(
+            `expected to find harper.js's known-buggy "new URL(binary).pathname" pattern in ${dir}/BinaryModule-*.js and didn't -- either harper.js fixed this upstream (in which case delete this patch) or changed the code shape (in which case this patch needs updating). Don't skip silently.`
+        );
+    }
+    log(`patched ${patched} file(s) in harper.js/dist (URL.pathname -> URL fs.readFile bug)`);
+}
+
 /** Smoke-test the staged, pre-zip package by actually spawning it and sending a real MCP
  * request over stdin -- the same verification standard the rest of this monorepo holds every
  * rule/engine change to (real execution, never "should work"). */
@@ -149,6 +196,9 @@ async function main() {
     fs.copyFileSync(path.join(lintCoreDir, ".vale.ini"), path.join(lintCoreStageDir, ".vale.ini"));
     copyRecursive(path.join(lintCoreDir, "styles"), path.join(lintCoreStageDir, "styles"));
     run("npm", ["install", "--omit=dev", "--no-audit", "--no-fund"], lintCoreStageDir);
+
+    log("Patching a real harper.js path-decoding bug (see this function's own comment)...");
+    patchHarperWasmPathBug(lintCoreStageDir);
 
     log("Staging mcp-server (dropping agents/@aitytech/suzume -- see this file's header comment)...");
     copyRecursive(path.join(mcpServerDir, "dist"), path.join(pkgStageDir, "dist"));

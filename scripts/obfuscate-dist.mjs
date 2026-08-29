@@ -61,6 +61,15 @@ const OBFUSCATOR_OPTIONS = {
     // not module linkage; renameGlobals: true has broken ESM named-export resolution in
     // testing (an import binds to a name that no longer exists post-obfuscation) and is not
     // worth the marginal extra opacity for how this project's exports work.
+    ignoreImports: true, // real bug, caught by testing apps/web (which consumes lint-core's
+    // dist directly through Vite, unlike mcp-server's staged/copied .mcpb build): without this,
+    // string-array extraction rewrites a dynamic `import("./ja-preset.js")` call's specifier
+    // into concatenated `_0x1234(56) + _0x1234(78)` lookups. Node doesn't care (it's still a
+    // valid computed expression at runtime), but Vite's static import analyzer can no longer
+    // recognize the specifier and warns "cannot be analyzed" -- at worst breaking the
+    // dependency pre-bundling this dynamic import relies on for lazy-loading the JA preset in
+    // the browser. ignoreImports leaves import()/require() specifier strings untouched while
+    // still obfuscating everything else.
     selfDefending: false, // see file header comment
     debugProtection: false, // see file header comment
     stringArray: true,
@@ -70,7 +79,21 @@ const OBFUSCATOR_OPTIONS = {
     simplify: true,
     splitStrings: true,
     splitStringsChunkLength: 10,
-    transformObjectKeys: true
+    // transformObjectKeys rewrites object-literal property keys into computed lookups
+    // (`{foo: 1}` -> `{[_0x1234(5)]: 1}`). Fine for mcp-server/lint-core in isolation (verified
+    // end-to-end), but a real, bisected failure for apps/web: with it on, the production build
+    // passes `node --check`, Vite builds it without error, and the page loads with zero console
+    // errors -- and #root stays permanently empty. Root-caused by binary-searching the full
+    // option set down to this one flag (toggled every other option off, confirmed the app
+    // renders; added this one back alone, confirmed it breaks again) rather than guessed from
+    // the symptom. Almost certainly React: JSX-transformed element objects and React's own
+    // internals (`$$typeof`, `key`, `ref`, `children`, ...) depend on exact literal property
+    // names that other code (React itself, in a separately-obfuscated or non-obfuscated chunk)
+    // matches by string -- rewriting the key on one side but not the other silently breaks the
+    // match with no thrown error. Disabled for --light; kept on for the strong profile since
+    // mcp-server/lint-core (no React, no comparably fragile object-shape dependencies) already
+    // measured clean end-to-end with it enabled.
+    transformObjectKeys: !light
 };
 
 function findJsFiles(dir) {
